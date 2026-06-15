@@ -168,7 +168,7 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 
 > CC-X 的边界比功能更重要。
 
-Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"，也不想把用户的配置收编进自己的数据库。它只站在 Claude Code 进程启动前的那一小步：把 9 个受管环境变量准备好，然后让 Claude Code 自己工作。
+Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"，也不想把用户的配置收编进自己的数据库。它只站在 Claude Code 进程启动前的那一小步：把 8 个受管环境变量准备好，然后让 Claude Code 自己工作。
 
 所以它的取舍是有意的：不写 Claude Code 配置文件，不接管 MCP，不做自动迁移，不做后台常驻管理。能用进程环境变量解决，就不碰全局文件；能让用户显式选择，就不替用户自动决定。少做一点，是为了把风险面压到足够小。
 
@@ -231,8 +231,8 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
   - 语义一致：**只影响新终端**；切到「官方」会清除全部受管变量
 - **不修改任何 Claude Code 配置文件。** 启动第三方前只读探测一次 `~/.claude.json` 的 onboarding 字段，用于提示。
 
-CC-X 只动这 9 个「受管」环境变量，切换时清掉目标不用的：
-`ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_API_KEY`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`CLAUDE_CODE_EFFORT_LEVEL`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`、`CLAUDE_CODE_AUTO_COMPACT_WINDOW`。
+CC-X 只动这 8 个「受管」环境变量，切换时清掉目标不用的：
+`ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_API_KEY`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`CLAUDE_CODE_EFFORT_LEVEL`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`。
 
 > 💡 需要改 `settings.json`？直接用 Claude Code 的 `/update-config` 说需求（如"允许 npm 命令"），比让外部工具改可靠。
 

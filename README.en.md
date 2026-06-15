@@ -178,7 +178,7 @@ cc-switch is an excellent full-featured GUI; CC-X takes the opposite, minimal ap
 
 > CC-X cares more about boundaries than features.
 
-Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 9 managed environment variables, then let Claude Code run.
+Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 8 managed environment variables, then let Claude Code run.
 
 That constraint is deliberate: no writes to Claude Code config files, no MCP management, no automatic migration, no resident background controller. If process environment variables can solve it, CC-X avoids global files; if a choice matters, the user makes it explicitly. Doing less keeps the failure surface small.
 
@@ -249,10 +249,10 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 - **No Claude Code config file is ever modified.** Before third-party launches, CC-X only reads
   the onboarding field in `~/.claude.json` to decide whether to print a hint.
 
-CC-X only touches these 9 "managed" variables (and clears the ones a target profile doesn't use):
+CC-X only touches these 8 "managed" variables (and clears the ones a target profile doesn't use):
 `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `ANTHROPIC_DEFAULT_OPUS_MODEL`,
 `ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`,
-`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`, `CLAUDE_CODE_AUTO_COMPACT_WINDOW`.
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`.
 
 > 💡 To change `settings.json`, use Claude Code's own `/update-config` and describe what you want
 > in natural language (e.g. "allow npm commands") — safer than letting an external tool rewrite it.
