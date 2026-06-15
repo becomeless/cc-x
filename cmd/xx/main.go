@@ -1,6 +1,6 @@
 // Command xx 是 ccx 的 Go 原生入口：解析参数 -> 分派到 CLI 路径或交互菜单。
 //
-// 铁律：绝不写 Claude Code 配置文件；API 切换只动 7 个受管环境变量。
+// 铁律：绝不写 Claude Code 配置文件；API 切换只动 9 个受管环境变量。
 package main
 
 import (
@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/becomeless/cc-x/internal/claudecfg"
 	"github.com/becomeless/cc-x/internal/config"
 	"github.com/becomeless/cc-x/internal/defaults"
 	"github.com/becomeless/cc-x/internal/display"
@@ -229,6 +230,9 @@ func runDefault(paths config.StorePaths, store *config.Store, p *config.Provider
 // launchSession：本次启用 —— 提示 + banner + 套环境启动 claude，阻塞至其退出。对齐 npm 版 launchSession/sessionLaunch。
 func launchSession(p config.Provider) int {
 	warnIfNoKey(p)
+	if !config.IsOfficial(p) && !claudecfg.HasCompletedOnboarding() {
+		fmt.Printf("  %s\n", i18n.T("session.onboardingHint"))
+	}
 	fmt.Println("")
 	fmt.Printf("  %s\n", i18n.T("session.launch", i18n.ProviderDisplayName(p)))
 	fmt.Printf("  %s\n", i18n.T("session.starting"))

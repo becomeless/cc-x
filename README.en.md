@@ -178,7 +178,7 @@ cc-switch is an excellent full-featured GUI; CC-X takes the opposite, minimal ap
 
 > CC-X cares more about boundaries than features.
 
-Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 7 managed environment variables, then let Claude Code run.
+Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 9 managed environment variables, then let Claude Code run.
 
 That constraint is deliberate: no writes to Claude Code config files, no MCP management, no automatic migration, no resident background controller. If process environment variables can solve it, CC-X avoids global files; if a choice matters, the user makes it explicitly. Doing less keeps the failure surface small.
 
@@ -199,6 +199,8 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 | sonnet → model | `ANTHROPIC_DEFAULT_SONNET_MODEL` | |
 | haiku → model | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
 | effort level | `CLAUDE_CODE_EFFORT_LEVEL` | `low`–`max`; `auto` = model default; empty = unset. Third parties may not honor it |
+| Disable nonessential traffic | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1` disables nonessential Claude Code traffic; empty = unset. Zhipu GLM defaults to `1` |
+| Context window | `CLAUDE_CODE_AUTO_COMPACT_WINDOW` | Fill with a Claude Code-supported window value; empty = unset |
 
 > CC-X **deliberately does not set** `ANTHROPIC_MODEL`. Use `/model opus|sonnet|haiku` in-session;
 > the mapping table translates to the provider's real model name.
@@ -212,12 +214,12 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 
 ### Pre-seeded profiles
 
-| Profile | BASE_URL | OPUS / SONNET | HAIKU (incl. background) | effort |
-|---|---|---|---|---|
-| Official | empty (logged-in) | — | — | — |
-| DeepSeek | `https://api.deepseek.com/anthropic` | `deepseek-v4-pro` | `deepseek-v4-flash` | `max` (recommended) |
-| Zhipu GLM | `https://open.bigmodel.cn/api/anthropic` | `GLM-4.7` | `glm-4.5-air` | — |
-| Xiaomi MiMo | `https://api.xiaomimimo.com/anthropic` | `mimo-v2.5-pro` | `mimo-v2.5-pro` | — |
+| Profile | BASE_URL | OPUS / SONNET | HAIKU (incl. background) | effort | Extra env |
+|---|---|---|---|---|---|
+| Official | empty (logged-in) | — | — | — | — |
+| DeepSeek | `https://api.deepseek.com/anthropic` | `deepseek-v4-pro` | `deepseek-v4-flash` | `max` (recommended) | — |
+| Zhipu GLM | `https://open.bigmodel.cn/api/anthropic` | `GLM-4.7` | `glm-4.5-air` | — | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` |
+| Xiaomi MiMo | `https://api.xiaomimimo.com/anthropic` | `mimo-v2.5-pro` | `mimo-v2.5-pro` | — | — |
 
 > Model names change as providers update. Xiaomi MiMo has both pay-as-you-go and TokenPlan
 > endpoints; you pick one when selecting the provider.
@@ -228,9 +230,9 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
   with ` 2`, ` 3`… Use **Note** to tell them apart, shown as "Provider — Note".
 - **Custom providers**: `presets.json` is the provider catalog; add a JSON entry to offer a new
   one, no code change. Drop `~/.cc-mini/presets.json` to override the shipped catalog.
-- **First-launch login prompt**: third-party APIs may still show onboarding. Add
-  `"hasCompletedOnboarding": true` to `~/.claude.json` (**only this key** — don't overwrite
-  the file; it also holds your MCP config).
+- **First-launch login prompt**: before launching a third-party profile, CC-X reads
+  `hasCompletedOnboarding` from `~/.claude.json` and prints a non-blocking hint when onboarding
+  is unfinished. It does not write the file; dismiss or skip the Claude Code prompt if it appears.
 - **Update check**: toggle to "notify" in the menu — a yellow one-liner appears atop the menu
   when a new release is out. At most one check per day; never auto-upgrades.
 
@@ -244,11 +246,13 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
   - Windows → registry `HKCU\Environment` + one change broadcast
   - Unix → `# >>> xx >>>` … `# <<< xx <<<` marker block in shell startup file (idempotent rewrite, chosen by `$SHELL`)
   - Same semantics either way: **only affects new terminals**; switching to "Official" clears all managed vars
-- **No Claude Code config file is ever modified.**
+- **No Claude Code config file is ever modified.** Before third-party launches, CC-X only reads
+  the onboarding field in `~/.claude.json` to decide whether to print a hint.
 
-CC-X only touches these 7 "managed" variables (and clears the ones a target profile doesn't use):
+CC-X only touches these 9 "managed" variables (and clears the ones a target profile doesn't use):
 `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `ANTHROPIC_DEFAULT_OPUS_MODEL`,
-`ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`.
+`ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`,
+`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`, `CLAUDE_CODE_AUTO_COMPACT_WINDOW`.
 
 > 💡 To change `settings.json`, use Claude Code's own `/update-config` and describe what you want
 > in natural language (e.g. "allow npm commands") — safer than letting an external tool rewrite it.

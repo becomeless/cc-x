@@ -4,7 +4,7 @@
  * 数据格式必须与现版 PowerShell 完全兼容（老用户的 ~/.cc-mini/providers.json 能直接读）。
  */
 
-/** 受管的 7 个环境变量（工具只动这些，其它一律不碰）。详见 plan §2。 */
+/** 受管的 9 个环境变量（工具只动这些，其它一律不碰）。详见 plan §2。 */
 export const KNOWN_KEYS = [
   'ANTHROPIC_BASE_URL',
   'ANTHROPIC_AUTH_TOKEN',
@@ -13,6 +13,8 @@ export const KNOWN_KEYS = [
   'ANTHROPIC_DEFAULT_SONNET_MODEL',
   'ANTHROPIC_DEFAULT_HAIKU_MODEL',
   'CLAUDE_CODE_EFFORT_LEVEL',
+  'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
+  'CLAUDE_CODE_AUTO_COMPACT_WINDOW',
 ] as const;
 
 export type ManagedKey = (typeof KNOWN_KEYS)[number];
@@ -57,6 +59,9 @@ export interface PresetModels {
   haiku?: string;
 }
 
+/** 供应商目录可预填的额外受管变量。不接受鉴权字段，避免把 presets 变成密钥载体。 */
+export type PresetEnv = Partial<Record<'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC' | 'CLAUDE_CODE_AUTO_COMPACT_WINDOW', string>>;
+
 /** presets.json 里的一个「供应商」（provider）目录条目。 */
 export interface Preset {
   name: string;
@@ -64,4 +69,5 @@ export interface Preset {
   urls: PresetUrl[];
   models: PresetModels;
   effort?: string;
+  env?: PresetEnv;
 }

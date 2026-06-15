@@ -10,9 +10,9 @@ import (
 	"sort"
 )
 
-// knownKeys 是受管的 7 个环境变量（工具只动这些，其它一律不碰），顺序即写盘顺序。
+// knownKeys 是受管的 9 个环境变量（工具只动这些，其它一律不碰），顺序即写盘顺序。
 //
-// 故意私有：这 7 个键是项目铁律的一部分，若导出且可变，任何包都能 append / 改元素，
+// 故意私有：这 9 个键是项目铁律的一部分，若导出且可变，任何包都能 append / 改元素，
 // 导致 env 清理范围和 JSON 键顺序悄悄漂。对外只经 ManagedKeys() 暴露副本。
 var knownKeys = []string{
 	"ANTHROPIC_BASE_URL",
@@ -22,6 +22,8 @@ var knownKeys = []string{
 	"ANTHROPIC_DEFAULT_SONNET_MODEL",
 	"ANTHROPIC_DEFAULT_HAIKU_MODEL",
 	"CLAUDE_CODE_EFFORT_LEVEL",
+	"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+	"CLAUDE_CODE_AUTO_COMPACT_WINDOW",
 }
 
 // ManagedKeys 返回受管环境变量名的副本（按写盘顺序）。调用方修改返回值不影响内部常量。

@@ -1,7 +1,7 @@
 /**
  * 本次启用（Session-Launch）—— 进程级、阅后即焚。
  *
- * 1) 对 7 个受管键：有值 set，没值 delete（只动这 7 个）。
+ * 1) 对 9 个受管键：有值 set，没值 delete（只动这 9 个）。
  * 2) 找到 claude（which；Windows 上是 claude.cmd，评审②）。
  * 3) spawn 且 stdio:inherit —— 子进程继承真实控制台句柄，天然没有现版 PowerShell 的
  *    「stdin 被包成管道 → claude 误判非交互」问题。
@@ -12,7 +12,7 @@ import which from 'which';
 
 import { KNOWN_KEYS, getProviderEnvMap, type Provider } from '../config/store.js';
 
-/** 把目标配置的受管环境变量套到当前进程（有值 set、没值 delete，只动这 7 个）。 */
+/** 把目标配置的受管环境变量套到当前进程（有值 set、没值 delete，只动这 9 个）。 */
 export function applyManagedEnv(p: Provider): void {
   const map = getProviderEnvMap(p);
   for (const key of KNOWN_KEYS) {

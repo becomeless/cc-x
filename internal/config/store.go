@@ -45,10 +45,11 @@ func DefaultStore() *Store {
 				"CLAUDE_CODE_EFFORT_LEVEL":       "max",
 			}},
 			{Name: "智谱GLM", Note: "", Env: map[string]string{
-				"ANTHROPIC_BASE_URL":             "https://open.bigmodel.cn/api/anthropic",
-				"ANTHROPIC_DEFAULT_OPUS_MODEL":   "GLM-4.7",
-				"ANTHROPIC_DEFAULT_SONNET_MODEL": "GLM-4.7",
-				"ANTHROPIC_DEFAULT_HAIKU_MODEL":  "glm-4.5-air",
+				"ANTHROPIC_BASE_URL":                       "https://open.bigmodel.cn/api/anthropic",
+				"ANTHROPIC_DEFAULT_OPUS_MODEL":             "GLM-4.7",
+				"ANTHROPIC_DEFAULT_SONNET_MODEL":           "GLM-4.7",
+				"ANTHROPIC_DEFAULT_HAIKU_MODEL":            "glm-4.5-air",
+				"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
 			}},
 			{Name: "小米MiMo", Note: "", Env: map[string]string{
 				"ANTHROPIC_BASE_URL":             "https://api.xiaomimimo.com/anthropic",

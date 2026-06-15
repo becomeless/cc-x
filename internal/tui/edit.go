@@ -11,6 +11,7 @@ import (
 
 type workCopy struct {
 	name, note, base, auth, token, opus, sonnet, haiku, effort string
+	disableTraffic, autoCompact                                string
 }
 
 func fromProvider(p config.Provider) workCopy {
@@ -24,13 +25,15 @@ func fromProvider(p config.Provider) workCopy {
 	}
 	return workCopy{
 		name: p.Name, note: p.Note,
-		base:   m["ANTHROPIC_BASE_URL"],
-		auth:   auth,
-		token:  token,
-		opus:   m["ANTHROPIC_DEFAULT_OPUS_MODEL"],
-		sonnet: m["ANTHROPIC_DEFAULT_SONNET_MODEL"],
-		haiku:  m["ANTHROPIC_DEFAULT_HAIKU_MODEL"],
-		effort: m["CLAUDE_CODE_EFFORT_LEVEL"],
+		base:           m["ANTHROPIC_BASE_URL"],
+		auth:           auth,
+		token:          token,
+		opus:           m["ANTHROPIC_DEFAULT_OPUS_MODEL"],
+		sonnet:         m["ANTHROPIC_DEFAULT_SONNET_MODEL"],
+		haiku:          m["ANTHROPIC_DEFAULT_HAIKU_MODEL"],
+		effort:         m["CLAUDE_CODE_EFFORT_LEVEL"],
+		disableTraffic: m["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"],
+		autoCompact:    m["CLAUDE_CODE_AUTO_COMPACT_WINDOW"],
 	}
 }
 
@@ -81,6 +84,8 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 			{"sonnet", i18n.T("edit.field.sonnet") + ": " + v(w.sonnet)},
 			{"haiku", i18n.T("edit.field.haiku") + ": " + v(w.haiku)},
 			{"effort", i18n.T("edit.field.effort") + ": " + v(w.effort)},
+			{"disableTraffic", i18n.T("edit.field.disableTraffic") + ": " + v(w.disableTraffic)},
+			{"autoCompact", i18n.T("edit.field.autoCompact") + ": " + v(w.autoCompact)},
 			{"sep", ""},
 			{"toggle", toggleLabel(showSecret)},
 			{"sep", ""},
@@ -121,6 +126,12 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 				if pp.Effort != "" {
 					w.effort = pp.Effort
 				}
+				if val, ok := pp.Env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"]; ok {
+					w.disableTraffic = val
+				}
+				if val, ok := pp.Env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"]; ok {
+					w.autoCompact = val
+				}
 			}
 		case "note":
 			if note, ok := ReadText(t, "  "+i18n.T("edit.noteInput")); ok {
@@ -152,6 +163,14 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 			}
 		case "effort":
 			w.effort = PickEffort(t, w.effort)
+		case "disableTraffic":
+			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.disableTraffic")), w.disableTraffic, false); ch {
+				w.disableTraffic = val
+			}
+		case "autoCompact":
+			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.autoCompact")), w.autoCompact, false); ch {
+				w.autoCompact = val
+			}
 		case "toggle":
 			showSecret = !showSecret
 		case "save":
@@ -160,11 +179,13 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 				continue
 			}
 			fields := map[string]string{
-				"ANTHROPIC_BASE_URL":             w.base,
-				"ANTHROPIC_DEFAULT_OPUS_MODEL":   w.opus,
-				"ANTHROPIC_DEFAULT_SONNET_MODEL": w.sonnet,
-				"ANTHROPIC_DEFAULT_HAIKU_MODEL":  w.haiku,
-				"CLAUDE_CODE_EFFORT_LEVEL":       w.effort,
+				"ANTHROPIC_BASE_URL":                       w.base,
+				"ANTHROPIC_DEFAULT_OPUS_MODEL":             w.opus,
+				"ANTHROPIC_DEFAULT_SONNET_MODEL":           w.sonnet,
+				"ANTHROPIC_DEFAULT_HAIKU_MODEL":            w.haiku,
+				"CLAUDE_CODE_EFFORT_LEVEL":                 w.effort,
+				"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": w.disableTraffic,
+				"CLAUDE_CODE_AUTO_COMPACT_WINDOW":          w.autoCompact,
 			}
 			if w.auth == presets.AuthAPIKey {
 				fields["ANTHROPIC_API_KEY"] = w.token

@@ -3,7 +3,7 @@
  *
  * 评审③：钉 `powershell.exe`（5.1，Windows 必然存在），不用 `pwsh`（7+，可能没装）。
  * 逻辑搬自现版 Set-UserEnv-Fast + Invoke-EnvBroadcast：注册表瞬时写入、最后只广播一次（100ms 短超时、
- * SMTO_ABORTIFHUNG 跳过挂死窗口），避免「逐个 setx 广播 7 次、每窗口等 1s」的拖慢。
+ * SMTO_ABORTIFHUNG 跳过挂死窗口），避免「逐个 setx 广播 9 次、每窗口等 1s」的拖慢。
  *
  * 键值通过环境变量传 JSON 给子进程、用 ConvertFrom-Json 解析 —— 彻底避开命令行注入/引号转义。
  */

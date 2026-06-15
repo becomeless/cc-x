@@ -13,7 +13,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { resolveStorePaths } from './store.js';
-import type { Preset, PresetModels, PresetUrl } from './types.js';
+import type { Preset, PresetEnv, PresetModels, PresetUrl } from './types.js';
 
 export type { Preset } from './types.js';
 
@@ -31,6 +31,10 @@ export const BUILTIN_PRESETS: Preset[] = [
     auth: 'AUTH_TOKEN',
     urls: [{ label: 'Anthropic 兼容', url: 'https://open.bigmodel.cn/api/anthropic' }],
     models: { opus: 'GLM-4.7', sonnet: 'GLM-4.7', haiku: 'glm-4.5-air' },
+    env: {
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
+      CLAUDE_CODE_AUTO_COMPACT_WINDOW: '1000000',
+    },
   },
   {
     name: '小米MiMo',
@@ -65,6 +69,17 @@ function normalizeModels(raw: unknown): PresetModels {
   return models;
 }
 
+const PRESET_ENV_KEYS = ['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', 'CLAUDE_CODE_AUTO_COMPACT_WINDOW'] as const;
+
+function normalizeEnv(raw: unknown): PresetEnv | undefined {
+  const m = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const env: PresetEnv = {};
+  for (const key of PRESET_ENV_KEYS) {
+    if (typeof m[key] === 'string') env[key] = m[key];
+  }
+  return Object.keys(env).length > 0 ? env : undefined;
+}
+
 function normalizePreset(raw: unknown): Preset | undefined {
   const p = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
   const name = asString(p.name).trim();
@@ -73,6 +88,8 @@ function normalizePreset(raw: unknown): Preset | undefined {
   const urls = Array.isArray(p.urls) ? p.urls.map(normalizeUrl) : [];
   const preset: Preset = { name, auth, urls, models: normalizeModels(p.models) };
   if (typeof p.effort === 'string' && p.effort.trim()) preset.effort = p.effort.trim();
+  const env = normalizeEnv(p.env);
+  if (env) preset.env = env;
   return preset;
 }
 

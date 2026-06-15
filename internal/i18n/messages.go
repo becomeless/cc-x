@@ -103,7 +103,9 @@ var messages = map[string]msg{
 	"edit.field.opus":       {zh: "opus  → 模型  ", en: "opus  → model "},
 	"edit.field.sonnet":     {zh: "sonnet→ 模型  ", en: "sonnet→ model "},
 	"edit.field.haiku":      {zh: "haiku → 模型  ", en: "haiku → model "},
-	"edit.field.effort":     {zh: "effort 思考档 ", en: "effort level  "},
+	"edit.field.effort":          {zh: "effort 思考档 ", en: "effort level  "},
+	"edit.field.disableTraffic": {zh: "禁用非核心流量  ", en: "Disable traffic "},
+	"edit.field.autoCompact":    {zh: "上下文窗口大小  ", en: "Context window  "},
 	"edit.toggleSecretShow": {zh: "显示密钥明文（当前隐藏）", en: "Show key in plaintext (now hidden)"},
 	"edit.toggleSecretHide": {zh: "隐藏密钥（当前明文）", en: "Hide key (now shown)"},
 	"edit.save":             {zh: "保存并返回", en: "Save & back"},
@@ -156,6 +158,10 @@ var messages = map[string]msg{
 	},
 	"session.noClaude":     {zh: "未找到 claude 命令，请确认它在 PATH 中。", en: "claude not found on PATH."},
 	"session.noClaudeHint": {zh: "下一步：安装 Claude Code 后新开终端；npm 用户可运行 `npm install -g @anthropic-ai/claude-code`。", en: "Next: install Claude Code and open a new terminal; npm users can run `npm install -g @anthropic-ai/claude-code`."},
+	"session.onboardingHint": {
+		zh: "提示：若 Claude Code 首次启动出现登录引导，选择跳过或关闭引导后第三方 API 会自动生效。",
+		en: "Tip: if Claude Code shows a login prompt on first launch, dismiss or skip it — the third-party API will take effect regardless.",
+	},
 
 	// —— 配置自检（只读网络探测）——
 	"check.noUrl":    {zh: "官方登录态 / 未设置 API 地址，无需自检。", en: "Official login / no API URL set; nothing to probe."},

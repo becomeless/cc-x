@@ -38,11 +38,12 @@ type Models struct {
 
 // Preset 是一个「供应商」目录条目。
 type Preset struct {
-	Name   string `json:"name"`
-	Auth   string `json:"auth"` // AUTH_TOKEN | API_KEY
-	URLs   []URL  `json:"urls"`
-	Models Models `json:"models"`
-	Effort string `json:"effort,omitempty"`
+	Name   string            `json:"name"`
+	Auth   string            `json:"auth"` // AUTH_TOKEN | API_KEY
+	URLs   []URL             `json:"urls"`
+	Models Models            `json:"models"`
+	Effort string            `json:"effort,omitempty"`
+	Env    map[string]string `json:"env,omitempty"`
 }
 
 // BuiltinPresets 是内置兜底目录，镜像仓库根 presets.json（由 presets_test.go 对拍保证不漂）。
@@ -60,6 +61,10 @@ var BuiltinPresets = []Preset{
 		Auth:   AuthToken,
 		URLs:   []URL{{Label: "Anthropic 兼容", URL: "https://open.bigmodel.cn/api/anthropic"}},
 		Models: Models{Opus: "GLM-4.7", Sonnet: "GLM-4.7", Haiku: "glm-4.5-air"},
+		Env: map[string]string{
+			"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+			"CLAUDE_CODE_AUTO_COMPACT_WINDOW":          "1000000",
+		},
 	},
 	{
 		Name: "小米MiMo",
@@ -95,6 +100,21 @@ func normalizeModels(raw any) Models {
 	return Models{Opus: asString(m["opus"]), Sonnet: asString(m["sonnet"]), Haiku: asString(m["haiku"])}
 }
 
+func normalizeEnv(raw any) map[string]string {
+	m, _ := raw.(map[string]any)
+	allowed := []string{"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "CLAUDE_CODE_AUTO_COMPACT_WINDOW"}
+	out := map[string]string{}
+	for _, key := range allowed {
+		if v, ok := m[key].(string); ok {
+			out[key] = v
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
 // normalizePreset 宽松规整一条；无名条目返回 ok=false 由调用方丢弃。
 func normalizePreset(raw any) (Preset, bool) {
 	m, _ := raw.(map[string]any)
@@ -112,7 +132,7 @@ func normalizePreset(raw any) (Preset, bool) {
 			urls = append(urls, normalizeURL(u))
 		}
 	}
-	p := Preset{Name: name, Auth: auth, URLs: urls, Models: normalizeModels(m["models"])}
+	p := Preset{Name: name, Auth: auth, URLs: urls, Models: normalizeModels(m["models"]), Env: normalizeEnv(m["env"])}
 	if e := strings.TrimSpace(asString(m["effort"])); e != "" {
 		p.Effort = e
 	}

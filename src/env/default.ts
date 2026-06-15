@@ -1,7 +1,7 @@
 /**
  * 设为默认（Set-Default）—— 持久化用户环境变量，仅影响新开终端、不动运行中会话。
  *
- * 对 7 个受管键：目标配置有值的写值，没值的清除（vals 里记 null）。然后 store.current=name 并存盘。
+ * 对 9 个受管键：目标配置有值的写值，没值的清除（vals 里记 null）。然后 store.current=name 并存盘。
  * 平台分叉是唯一有平台差异的地方：Windows 走注册表+广播，Unix 走 rc 文件 marker 块。
  * `--default-scope process` = 不落盘 dry-run（评审⑥）：照常算 vals、更新 store，但跳过系统持久化。
  */
