@@ -56,8 +56,8 @@ export const messages: Record<string, Msg> = {
   // —— 菜单通用 ——
   'menu.prompt': { zh: '输入序号 (q 取消): ', en: 'Enter number (q to cancel): ' },
   'menu.mainTitle': {
-    zh: 'CC-X v{0} · Claude Code API 切换器     默认：{1}',
-    en: 'CC-X v{0} · Claude Code API switcher     Default: {1}',
+    zh: 'CC-X v{0}     默认：{1}',
+    en: 'CC-X v{0}     Default: {1}',
   },
   'menu.mainHint': {
     zh: '↑↓ 选择 · Enter 进入 · e 编辑 · s 启动 · d 设默认 · Shift+↑↓ 排序 · q 退出',

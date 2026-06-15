@@ -7,11 +7,10 @@
  */
 import { launchSession } from '../actions.js';
 import { checkProfile } from '../check.js';
-import { getProviderEnvMap, getProviderState, isOfficial, reconcileCurrent, saveStore, type Provider, type Store, type StorePaths } from '../config/store.js';
+import { getProviderState, isOfficial, reconcileCurrent, saveStore, type Provider, type Store, type StorePaths } from '../config/store.js';
 import type { Preset } from '../config/types.js';
 import { persistDefaultEnv, setDefault, type DefaultScope } from '../env/default.js';
 import { getLang, providerDisplayName, setLang, T } from '../i18n/index.js';
-import { currentTerminalLine, hostOf } from '../runtime-info.js';
 import { banner as updateBanner, maybeRefresh, MODE_NOTIFY, upgradeCommand } from '../update/update.js';
 import { paint } from '../utils/ansi.js';
 import { displayWidth, padDisplay } from '../utils/display.js';
@@ -34,7 +33,7 @@ export async function openMenu(
   for (;;) {
     const n = store.providers.length;
     // 更新检查（仅 notify 模式）：首轮触发一次后台刷新；横幅永远读缓存（瞬时、不阻塞）。
-    const notices = [currentTerminalLine(store)];
+    const notices: string[] = [];
     if (needsFirstRunHint(store)) notices.push(T('menu.firstRunHint'));
     if (warnFlash) notices.push(warnFlash);
     if (store.update === MODE_NOTIFY) {
@@ -69,7 +68,7 @@ export async function openMenu(
       notice: notices.join('\n'),
       ...(flash ? { status: flash } : {}),
       items: buildItems(),
-      colors: { [n + 1]: 'yellow' },
+      colors: { [n + 1]: 'yellow', [n + 2]: 'dim', [n + 3]: 'dim' },
       start: sel,
       movableCount: n,
       onMove,
@@ -236,44 +235,45 @@ function applyDefault(paths: StorePaths, store: Store, p: Provider, scope: Defau
 
 const ROW_NAME_W = 13; // 名字列宽（显示宽度，CJK 计 2）；状态/备注列宽按内容动态算
 
-// profileRows 把所有配置格式化成定宽分栏的菜单行：名字为主信息（默认项加粗），
-// 状态/备注/host 一律 dim 退为次要信息，让备注、host 各自对齐成竖列。
-// 状态、备注列宽按当前配置实际内容动态取最大值——自动兜住任何语言/文案。
+// profileRows 把所有配置格式化成三列菜单行：名字（主信息，默认项加粗、缺密钥变灰）
+// + 备注（紧跟名字、dim，同名配置靠它区分）+ 状态（effort/缺密钥告警，dim，锚成最右一列）。
+// 备注列宽按当前配置实际内容动态取最大值；状态列在最右，无需补宽。
 // TUI 主菜单与 xx --list 共用此函数，保证两处呈现一致。与 Go 版 menu.go ProfileRows 对齐。
 export function profileRows(providers: Provider[], current: string): string[] {
-  let stateW = 0;
   let noteW = 0;
   for (const p of providers) {
-    stateW = Math.max(stateW, displayWidth(stateLabel(p)));
     noteW = Math.max(noteW, displayWidth(p.note ?? ''));
   }
-  stateW += 2; // 状态列尾留出与备注列的间距（最宽行否则会与备注贴死）
-  if (noteW > 0) noteW += 2; // 有备注时留出与 host 的列间距
-  return providers.map((p) => profileRow(p, p.name === current, stateW, noteW));
+  if (noteW > 0) noteW += 2; // 备注列尾留出与状态列的间距
+  return providers.map((p) => profileRow(p, p.name === current, noteW));
 }
 
-// profileRow 组成一行：定宽分栏 + 次要信息 dim + 默认项加粗。
-// 加粗用 1m/22m（reset 不动颜色），不会破坏 selectMenu 选中行的外层绿色。
-function profileRow(p: Provider, isDefault: boolean, stateW: number, noteW: number): string {
+// rowStateText 行内状态段：只保留 effort 与「缺密钥」告警。
+// 「登录态/密钥已设/密钥·API_KEY」等可用态不再用文字表达——能不能用由配置名的亮/灰区分。
+function rowStateText(p: Provider): string {
+  const st = getProviderState(p);
+  const parts: string[] = [];
+  if (st.effort) parts.push(`effort=${st.effort}`);
+  if (st.key === 'noKey') parts.push(T('state.noKey'));
+  return parts.join(' · ');
+}
+
+// profileRow 组成一行：名字 + 备注 + 状态三列，次要信息 dim、默认项加粗、缺密钥变灰。
+// 默认项只靠名字加粗标识（不再额外画 ● 符号，与光标 ▶ 重叠冗余）；选中行由 selectMenu 整行绿。
+// 亮/灰用加粗(1m)与 dim(2m)，reset 都用 22m 不动颜色，不会破坏选中行的外层绿色。
+function profileRow(p: Provider, isDefault: boolean, noteW: number): string {
+  const noKey = getProviderState(p).key === 'noKey';
   let name = padDisplay(providerDisplayName(p), ROW_NAME_W);
-  let marker = '  ';
-  if (isDefault) {
-    marker = paint('● ', 'bold');
-    name = paint(name, 'bold');
-  }
-  const state = paint(` · ${padDisplay(stateLabel(p), stateW)}`, 'dim');
-  // 空备注=定宽空白，撑出 host 前的列间距
+  if (noKey) name = paint(name, 'dim'); // 灰掉=当前不可用（缺密钥）
+  else if (isDefault) name = paint(name, 'bold'); // 加粗=默认配置
+  // 空备注=定宽空白，撑出状态列前的间距
   const note = (p.note ?? '').trim()
     ? paint(padDisplay(p.note ?? '', noteW), 'dim')
     : padDisplay('', noteW);
-  return `${marker}${name}${state}${note}${hostCol(p)}`;
-}
-
-// hostCol 返回行尾 dim 的 host（无 base 返回空）。超宽时由 selectMenu 的 ANSI-aware 截断裁掉。
-function hostCol(p: Provider): string {
-  const base = (getProviderEnvMap(p).ANTHROPIC_BASE_URL ?? '').trim();
-  if (!base) return '';
-  return paint(hostOf(base), 'dim');
+  // 状态在最右一列，可用且无 effort 时整列省略
+  const seg = rowStateText(p);
+  const state = seg ? paint(` · ${seg}`, 'dim') : '';
+  return `${name}${note}${state}`;
 }
 
 function needsFirstRunHint(store: Store): boolean {

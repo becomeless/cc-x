@@ -13,7 +13,6 @@ import (
 	"github.com/becomeless/cc-x/internal/i18n"
 	"github.com/becomeless/cc-x/internal/launch"
 	"github.com/becomeless/cc-x/internal/presets"
-	"github.com/becomeless/cc-x/internal/runtimeinfo"
 	"github.com/becomeless/cc-x/internal/update"
 )
 
@@ -26,7 +25,7 @@ func OpenMenu(t *Terminal, paths config.StorePaths, store *config.Store, scope d
 	for {
 		n := len(store.Providers)
 		// 更新检查（仅 notify 模式）：首轮触发一次后台刷新；横幅永远读缓存（瞬时、不阻塞）。
-		notices := []string{runtimeinfo.CurrentTerminalLine(store)}
+		notices := []string{}
 		if needsFirstRunHint(store) {
 			notices = append(notices, i18n.T("menu.firstRunHint"))
 		}
@@ -67,7 +66,7 @@ func OpenMenu(t *Terminal, paths config.StorePaths, store *config.Store, scope d
 			Notice:       strings.Join(notices, "\n"),
 			Status:       flash,
 			Items:        buildItems(),
-			Colors:       map[int]Color{n + 1: ColorYellow},
+			Colors:       map[int]Color{n + 1: ColorYellow, n + 2: ColorDim, n + 3: ColorDim},
 			Start:        sel,
 			MovableCount: n,
 			OnMove:       onMove,
@@ -305,55 +304,62 @@ func tuiLaunchSession(p config.Provider) {
 
 const rowNameW = 13 // 名字列宽（显示宽度，CJK 计 2）；状态/备注列宽按内容动态算
 
-// ProfileRows 把所有配置格式化成定宽分栏的菜单行：名字为主信息（默认项加粗），
-// 状态/备注/host 一律 dim 退为次要信息，让备注、host 各自对齐成竖列。
-// 状态、备注列宽按当前配置实际内容动态取最大值——自动兜住任何语言/文案。
+// ProfileRows 把所有配置格式化成三列菜单行：名字（主信息，默认项加粗、缺密钥变灰）
+// + 备注（紧跟名字、dim，同名配置靠它区分）+ 状态（effort/缺密钥告警，dim，锚成最右一列）。
+// 备注列宽按当前配置实际内容动态取最大值——自动兜住任何语言/文案；状态列在最右，无需补宽。
 // TUI 主菜单与 xx --list 共用此函数，保证两处呈现一致。
 func ProfileRows(providers []config.Provider, current string) []string {
-	stateW, noteW := 0, 0
+	noteW := 0
 	for i := range providers {
-		if w := display.Width(i18n.StateLabel(providers[i])); w > stateW {
-			stateW = w
-		}
 		if w := display.Width(providers[i].Note); w > noteW {
 			noteW = w
 		}
 	}
-	stateW += 2 // 状态列尾留出与备注列的间距（最宽行否则会与备注贴死）
 	if noteW > 0 {
-		noteW += 2 // 有备注时留出与 host 的列间距
+		noteW += 2 // 备注列尾留出与状态列的间距
 	}
 	rows := make([]string, len(providers))
 	for i := range providers {
-		rows[i] = profileRow(providers[i], providers[i].Name == current, stateW, noteW)
+		rows[i] = profileRow(providers[i], providers[i].Name == current, noteW)
 	}
 	return rows
 }
 
-// profileRow 组成一行：定宽分栏 + 次要信息 dim + 默认项加粗。
-// 加粗用 1m/22m（reset 不动颜色），不会破坏 SelectMenu 选中行的外层绿色。
-func profileRow(p config.Provider, isDefault bool, stateW, noteW int) string {
-	name := display.Pad(i18n.ProviderDisplayName(p), rowNameW)
-	marker := "  "
-	if isDefault {
-		marker = Paint("● ", ColorBold)
-		name = Paint(name, ColorBold)
+// rowStateText 返回行内状态段：只保留 effort 与「缺密钥」告警。
+// 「登录态/密钥已设/密钥·API_KEY」等可用态不再用文字表达——能不能用由配置名的亮/灰区分。
+func rowStateText(st config.ProviderState) string {
+	parts := make([]string, 0, 2)
+	if st.Effort != "" {
+		parts = append(parts, "effort="+st.Effort)
 	}
-	state := Paint(" · "+display.Pad(i18n.StateLabel(p), stateW), ColorDim)
-	note := display.Pad(p.Note, noteW) // 空备注=定宽空白，撑出 host 前的列间距
+	if st.Key == config.KeyNone {
+		parts = append(parts, i18n.T("state.noKey"))
+	}
+	return strings.Join(parts, " · ")
+}
+
+// profileRow 组成一行：名字 + 备注 + 状态三列，次要信息 dim、默认项加粗、缺密钥变灰。
+// 默认项只靠名字加粗标识（不再额外画 ● 符号，与光标 ▶ 重叠冗余）；选中行由 SelectMenu 整行绿。
+// 亮/灰用加粗(1m)与 dim(2m)，reset 都用 22m 不动颜色，不会破坏选中行的外层绿色。
+func profileRow(p config.Provider, isDefault bool, noteW int) string {
+	st := config.GetProviderState(p)
+	noKey := st.Key == config.KeyNone
+	name := display.Pad(i18n.ProviderDisplayName(p), rowNameW)
+	switch {
+	case noKey:
+		name = Paint(name, ColorDim) // 灰掉=当前不可用（缺密钥）
+	case isDefault:
+		name = Paint(name, ColorBold) // 加粗=默认配置
+	}
+	note := display.Pad(p.Note, noteW) // 空备注=定宽空白，撑出状态列前的间距
 	if strings.TrimSpace(p.Note) != "" {
 		note = Paint(note, ColorDim)
 	}
-	return marker + name + state + note + hostCol(p)
-}
-
-// hostCol 返回行尾 dim 的 host（无 base 返回空）。超宽时由 SelectMenu 的 ANSI-aware 截断裁掉。
-func hostCol(p config.Provider) string {
-	base := strings.TrimSpace(config.GetProviderEnvMap(p)["ANTHROPIC_BASE_URL"])
-	if base == "" {
-		return ""
+	state := "" // 状态在最右一列，可用且无 effort 时整列省略
+	if seg := rowStateText(st); seg != "" {
+		state = Paint(" · "+seg, ColorDim)
 	}
-	return Paint(runtimeinfo.HostOf(base), ColorDim)
+	return name + note + state
 }
 
 func needsFirstRunHint(store *config.Store) bool {
