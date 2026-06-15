@@ -29,12 +29,12 @@ different path: **switching happens purely at the environment-variable layer.** 
 reads or writes any Claude Code config file. Your MCP, plugins, hooks — it won't touch them.
 
 ```text
-  CC-X v0.4.8 · Claude Code API switcher     Default: Official
+  CC-X v0.4.12     Default: Official
 
-   ▶ Official          (default)[Logged in]
-     DeepSeek            [Key set] — work
-     Zhipu GLM           [No key]
-     Xiaomi MiMo         [No key]
+     Official
+   ▶ DeepSeek     work   · effort=max
+     Zhipu GLM           · No key
+     Xiaomi MiMo         · No key
 
      New profile  ·  Switch to 中文  ·  Update check: off  ·  Exit
 

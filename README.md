@@ -28,12 +28,12 @@ CC-X 把这事儿做到了最简——切换只在环境变量层，**不读写�
 你的 MCP、插件、hooks，它碰都不会碰。
 
 ```text
-  CC-X v0.4.8 · Claude Code API 切换器     默认：官方
+  CC-X v0.4.12     默认：官方
 
-   ▶ 官方            （默认）[登录态]
-     DeepSeek                [密钥已设] — 公司
-     智谱GLM                 [密钥未填]
-     小米MiMo                [密钥未填]
+     官方
+   ▶ DeepSeek     公司   · effort=max
+     智谱GLM             · 密钥未填
+     小米MiMo            · 密钥未填
 
      新增配置  ·  切换到 English  ·  更新检查：关闭  ·  退出
 
