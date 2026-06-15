@@ -1,5 +1,10 @@
 # 更新日志
 
+## v0.4.10 — 2026-06-14
+
+- 移除 `CLAUDE_CODE_AUTO_COMPACT_WINDOW` 受管键（Claude Code 已通过模型名 `[1m]` 后缀自动感知上下文窗口大小，无需额外设置）；受管键降至 8 个
+- 「禁用非核心流量」字段改为是/否 picker，不再需要手动输入 `1`；GLM 等要求禁用的供应商可直接选「是」
+
 ## v0.4.9 — 2026-06-14
 
 - 新增：受管环境变量从 7 个扩展至 9 个，新增 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` 和 `CLAUDE_CODE_AUTO_COMPACT_WINDOW`；切换配置时自动清除，编辑表单中可直接填写（Go / TypeScript 双版本对齐）

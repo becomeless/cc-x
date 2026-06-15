@@ -1,6 +1,6 @@
 {
   "name": "@cc-x/cc-x",
-  "version": "0.4.9",
+  "version": "0.4.10",
   "description": "Claude Code API 切换器（命令 xx）：在官方账号与第三方 Anthropic 兼容 API 间切换，纯环境变量、不碰 Claude Code 配置文件。",
   "keywords": [
     "claude",
