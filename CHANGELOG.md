@@ -1,5 +1,12 @@
 # 更新日志
 
+## v0.4.9 — 2026-06-14
+
+- 新增：受管环境变量从 7 个扩展至 9 个，新增 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` 和 `CLAUDE_CODE_AUTO_COMPACT_WINDOW`；切换配置时自动清除，编辑表单中可直接填写（Go / TypeScript 双版本对齐）
+- 新增：GLM 预设自动预填 `DISABLE_NONESSENTIAL_TRAFFIC=1`（GLM 要求）和 `AUTO_COMPACT_WINDOW=1000000`（匹配 GLM 1M 上下文窗口），通过 `presets.json` → Preset.Env → 编辑表单 picker 传递，新建或重新选择 GLM 配置时自动生效
+- 新增（Go 版）：`internal/claudecfg` 包——只读检测 `~/.claude.json` 的 `hasCompletedOnboarding` 字段；非官方配置「本次启用」时若 onboarding 未完成，打印非阻塞提示（永不写入 Claude Code 配置文件）
+- 新增：`Preset.Env` 字段（Go + TypeScript），基于白名单规范化，仅允许 CC-behavior 变量（不含鉴权 key）
+
 ## v0.4.8 — 2026-06-10
 
 - 修复：Windows 终端将 Enter 以 `\r\n` 分两次投递时，`\n` 残留在 stdin 缓冲区，导致编辑含 `[` 字符的模型名（如 `mimo-v2.5[1m]`）后保存无效——ReadValue 进入 raw 模式后立即将残留 `\n` 误读为「空回车=不改」，用户输入被静默丢弃
