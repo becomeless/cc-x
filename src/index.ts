@@ -15,9 +15,7 @@ import { loadPresets } from './config/presets.js';
 import { setDefault } from './env/default.js';
 import { providerDisplayName, resolveLang, setLang, T } from './i18n/index.js';
 import { currentTerminalLine } from './runtime-info.js';
-import { noteSuffix, stateLabel } from './ui/format.js';
-import { openMenu } from './ui/menus.js';
-import { padDisplay } from './utils/display.js';
+import { openMenu, profileRows } from './ui/menus.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -134,9 +132,8 @@ function runList(store: Store): void {
   console.log('');
   console.log(`  ${T('list.default', cur ? providerDisplayName(cur) : store.current)}`);
   console.log(`  ${currentTerminalLine(store)}`);
-  for (const p of store.providers) {
-    const mark = p.name === store.current ? '▶' : ' ';
-    console.log(`   ${mark} ${padDisplay(providerDisplayName(p), 18)}[${stateLabel(p)}]${noteSuffix(p)}`);
+  for (const line of profileRows(store.providers, store.current)) {
+    console.log(`  ${line}`);
   }
   console.log('');
 }

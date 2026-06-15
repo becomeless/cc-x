@@ -13,7 +13,6 @@ import (
 	"github.com/becomeless/cc-x/internal/claudecfg"
 	"github.com/becomeless/cc-x/internal/config"
 	"github.com/becomeless/cc-x/internal/defaults"
-	"github.com/becomeless/cc-x/internal/display"
 	"github.com/becomeless/cc-x/internal/env"
 	"github.com/becomeless/cc-x/internal/i18n"
 	"github.com/becomeless/cc-x/internal/launch"
@@ -268,12 +267,8 @@ func runList(store *config.Store) {
 	}
 	fmt.Printf("  %s\n", i18n.T("list.default", curName))
 	fmt.Printf("  %s\n", runtimeinfo.CurrentTerminalLine(store))
-	for _, p := range store.Providers {
-		mark := " "
-		if p.Name == store.Current {
-			mark = "▶"
-		}
-		fmt.Printf("   %s %s[%s]%s\n", mark, display.Pad(i18n.ProviderDisplayName(p), 18), i18n.StateLabel(p), i18n.NoteSuffix(p))
+	for _, line := range tui.ProfileRows(store.Providers, store.Current) {
+		fmt.Printf("  %s\n", line)
 	}
 	fmt.Println("")
 }

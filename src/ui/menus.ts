@@ -14,7 +14,7 @@ import { getLang, providerDisplayName, setLang, T } from '../i18n/index.js';
 import { currentTerminalLine, hostOf } from '../runtime-info.js';
 import { banner as updateBanner, maybeRefresh, MODE_NOTIFY, upgradeCommand } from '../update/update.js';
 import { paint } from '../utils/ansi.js';
-import { padDisplay } from '../utils/display.js';
+import { displayWidth, padDisplay } from '../utils/display.js';
 import { editForm } from './edit.js';
 import { noteSuffix, stateLabel } from './format.js';
 import { confirmKey, selectMenu } from './select.js';
@@ -47,10 +47,7 @@ export async function openMenu(
     }
     const updLabel = store.update === MODE_NOTIFY ? T('menu.updateNotify') : T('menu.updateOff');
     const buildItems = (): string[] => {
-      const labels = store.providers.map((p) => {
-        const dft = p.name === store.current ? T('menu.default') : '';
-        return `${padDisplay(providerDisplayName(p), 16)}${padDisplay(dft, 8)}[${stateLabel(p)}]${noteSuffix(p)}${hostSuffix(p)}`;
-      });
+      const labels = profileRows(store.providers, store.current);
       return [...labels, '', T('menu.newProfile'), T('menu.language'), updLabel, '', T('menu.exit')];
     };
     const onMove = (from: number, to: number): string[] => {
@@ -237,12 +234,46 @@ function applyDefault(paths: StorePaths, store: Store, p: Provider, scope: Defau
   return defaultResultMessage(defaultWarning(p), name, setDefault(paths, store, p, scope));
 }
 
-// hostSuffix 返回行尾的灰字 host（如 ` · api.deepseek.com`）；无 base（官方/未填）返回空。
-// 超宽时由 selectMenu 的 ANSI-aware 截断从行尾裁掉，不会切坏颜色。
-function hostSuffix(p: Provider): string {
+const ROW_NAME_W = 13; // 名字列宽（显示宽度，CJK 计 2）；状态/备注列宽按内容动态算
+
+// profileRows 把所有配置格式化成定宽分栏的菜单行：名字为主信息（默认项加粗），
+// 状态/备注/host 一律 dim 退为次要信息，让备注、host 各自对齐成竖列。
+// 状态、备注列宽按当前配置实际内容动态取最大值——自动兜住任何语言/文案。
+// TUI 主菜单与 xx --list 共用此函数，保证两处呈现一致。与 Go 版 menu.go ProfileRows 对齐。
+export function profileRows(providers: Provider[], current: string): string[] {
+  let stateW = 0;
+  let noteW = 0;
+  for (const p of providers) {
+    stateW = Math.max(stateW, displayWidth(stateLabel(p)));
+    noteW = Math.max(noteW, displayWidth(p.note ?? ''));
+  }
+  stateW += 2; // 状态列尾留出与备注列的间距（最宽行否则会与备注贴死）
+  if (noteW > 0) noteW += 2; // 有备注时留出与 host 的列间距
+  return providers.map((p) => profileRow(p, p.name === current, stateW, noteW));
+}
+
+// profileRow 组成一行：定宽分栏 + 次要信息 dim + 默认项加粗。
+// 加粗用 1m/22m（reset 不动颜色），不会破坏 selectMenu 选中行的外层绿色。
+function profileRow(p: Provider, isDefault: boolean, stateW: number, noteW: number): string {
+  let name = padDisplay(providerDisplayName(p), ROW_NAME_W);
+  let marker = '  ';
+  if (isDefault) {
+    marker = paint('● ', 'bold');
+    name = paint(name, 'bold');
+  }
+  const state = paint(` · ${padDisplay(stateLabel(p), stateW)}`, 'dim');
+  // 空备注=定宽空白，撑出 host 前的列间距
+  const note = (p.note ?? '').trim()
+    ? paint(padDisplay(p.note ?? '', noteW), 'dim')
+    : padDisplay('', noteW);
+  return `${marker}${name}${state}${note}${hostCol(p)}`;
+}
+
+// hostCol 返回行尾 dim 的 host（无 base 返回空）。超宽时由 selectMenu 的 ANSI-aware 截断裁掉。
+function hostCol(p: Provider): string {
   const base = (getProviderEnvMap(p).ANTHROPIC_BASE_URL ?? '').trim();
   if (!base) return '';
-  return paint(` · ${hostOf(base)}`, 'dim');
+  return paint(hostOf(base), 'dim');
 }
 
 function needsFirstRunHint(store: Store): boolean {

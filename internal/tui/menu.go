@@ -47,16 +47,7 @@ func OpenMenu(t *Terminal, paths config.StorePaths, store *config.Store, scope d
 			updLabel = i18n.T("menu.updateNotify")
 		}
 		buildItems := func() []string {
-			labels := make([]string, n)
-			for i := range store.Providers {
-				p := store.Providers[i]
-				dft := ""
-				if p.Name == store.Current {
-					dft = i18n.T("menu.default")
-				}
-				labels[i] = display.Pad(i18n.ProviderDisplayName(p), 16) + display.Pad(dft, 8) + "[" + i18n.StateLabel(p) + "]" + i18n.NoteSuffix(p) + hostSuffix(p)
-			}
-			items := append([]string{}, labels...)
+			items := append([]string{}, ProfileRows(store.Providers, store.Current)...)
 			return append(items, "", i18n.T("menu.newProfile"), i18n.T("menu.language"), updLabel, "", i18n.T("menu.exit"))
 		}
 		moveWarn := ""
@@ -312,14 +303,57 @@ func tuiLaunchSession(p config.Provider) {
 	_, _ = launch.LaunchSession(bin)
 }
 
-// hostSuffix 返回行尾的灰字 host（如 ` · api.deepseek.com`）；无 base（官方/未填）返回空。
-// 超宽时由 SelectMenu 的 ANSI-aware 截断从行尾裁掉，不会切坏颜色。
-func hostSuffix(p config.Provider) string {
+const rowNameW = 13 // 名字列宽（显示宽度，CJK 计 2）；状态/备注列宽按内容动态算
+
+// ProfileRows 把所有配置格式化成定宽分栏的菜单行：名字为主信息（默认项加粗），
+// 状态/备注/host 一律 dim 退为次要信息，让备注、host 各自对齐成竖列。
+// 状态、备注列宽按当前配置实际内容动态取最大值——自动兜住任何语言/文案。
+// TUI 主菜单与 xx --list 共用此函数，保证两处呈现一致。
+func ProfileRows(providers []config.Provider, current string) []string {
+	stateW, noteW := 0, 0
+	for i := range providers {
+		if w := display.Width(i18n.StateLabel(providers[i])); w > stateW {
+			stateW = w
+		}
+		if w := display.Width(providers[i].Note); w > noteW {
+			noteW = w
+		}
+	}
+	stateW += 2 // 状态列尾留出与备注列的间距（最宽行否则会与备注贴死）
+	if noteW > 0 {
+		noteW += 2 // 有备注时留出与 host 的列间距
+	}
+	rows := make([]string, len(providers))
+	for i := range providers {
+		rows[i] = profileRow(providers[i], providers[i].Name == current, stateW, noteW)
+	}
+	return rows
+}
+
+// profileRow 组成一行：定宽分栏 + 次要信息 dim + 默认项加粗。
+// 加粗用 1m/22m（reset 不动颜色），不会破坏 SelectMenu 选中行的外层绿色。
+func profileRow(p config.Provider, isDefault bool, stateW, noteW int) string {
+	name := display.Pad(i18n.ProviderDisplayName(p), rowNameW)
+	marker := "  "
+	if isDefault {
+		marker = Paint("● ", ColorBold)
+		name = Paint(name, ColorBold)
+	}
+	state := Paint(" · "+display.Pad(i18n.StateLabel(p), stateW), ColorDim)
+	note := display.Pad(p.Note, noteW) // 空备注=定宽空白，撑出 host 前的列间距
+	if strings.TrimSpace(p.Note) != "" {
+		note = Paint(note, ColorDim)
+	}
+	return marker + name + state + note + hostCol(p)
+}
+
+// hostCol 返回行尾 dim 的 host（无 base 返回空）。超宽时由 SelectMenu 的 ANSI-aware 截断裁掉。
+func hostCol(p config.Provider) string {
 	base := strings.TrimSpace(config.GetProviderEnvMap(p)["ANTHROPIC_BASE_URL"])
 	if base == "" {
 		return ""
 	}
-	return Paint(" · "+runtimeinfo.HostOf(base), ColorDim)
+	return Paint(runtimeinfo.HostOf(base), ColorDim)
 }
 
 func needsFirstRunHint(store *config.Store) bool {
