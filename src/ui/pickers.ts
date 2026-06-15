@@ -74,6 +74,19 @@ export async function pickAuth(current: 'AUTH_TOKEN' | 'API_KEY'): Promise<'AUTH
 
 const EFFORT_OPTS = ['low', 'medium', 'high', 'xhigh', 'max', 'auto'];
 
+/** 选是否禁用非核心流量：是（"1"）/ 否（""）/ 不改。 */
+export async function pickDisableTraffic(current: string): Promise<string> {
+  const items = [T('pick.disableTraffic.yes'), T('pick.disableTraffic.no'), T('pick.noChange')];
+  const sel = await selectMenu({
+    title: T('pick.disableTraffic.title', current || T('empty.paren')),
+    items,
+    hint: T('pick.hint'),
+    noNumber: true,
+  });
+  if (sel < 0 || sel === 2) return current;
+  return sel === 0 ? '1' : '';
+}
+
 /** 选 effort 思考档：low…auto / 留空 / 不改。 */
 export async function pickEffort(current: string): Promise<string> {
   const items = [...EFFORT_OPTS, T('pick.effort.empty'), T('pick.noChange')];

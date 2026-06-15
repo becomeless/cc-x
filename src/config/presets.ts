@@ -33,7 +33,6 @@ export const BUILTIN_PRESETS: Preset[] = [
     models: { opus: 'GLM-4.7', sonnet: 'GLM-4.7', haiku: 'glm-4.5-air' },
     env: {
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
-      CLAUDE_CODE_AUTO_COMPACT_WINDOW: '1000000',
     },
   },
   {
@@ -69,7 +68,7 @@ function normalizeModels(raw: unknown): PresetModels {
   return models;
 }
 
-const PRESET_ENV_KEYS = ['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', 'CLAUDE_CODE_AUTO_COMPACT_WINDOW'] as const;
+const PRESET_ENV_KEYS = ['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'] as const;
 
 function normalizeEnv(raw: unknown): PresetEnv | undefined {
   const m = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;

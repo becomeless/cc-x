@@ -130,3 +130,16 @@ func PickEffort(t *Terminal, current string) string {
 	}
 	return effortOpts[s]
 }
+
+// PickDisableTraffic 选是否禁用非核心流量：是（"1"）/ 否（""）/ 不改。
+func PickDisableTraffic(t *Terminal, current string) string {
+	items := []string{i18n.T("pick.disableTraffic.yes"), i18n.T("pick.disableTraffic.no"), i18n.T("pick.noChange")}
+	s := SelectMenu(t, SelectOptions{Title: i18n.T("pick.disableTraffic.title", orEmpty(current)), Items: items, Hint: i18n.T("pick.hint"), NoNumber: true})
+	if s < 0 || s == 2 {
+		return current
+	}
+	if s == 0 {
+		return "1"
+	}
+	return ""
+}

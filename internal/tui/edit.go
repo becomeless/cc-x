@@ -11,7 +11,7 @@ import (
 
 type workCopy struct {
 	name, note, base, auth, token, opus, sonnet, haiku, effort string
-	disableTraffic, autoCompact                                string
+	disableTraffic                                             string
 }
 
 func fromProvider(p config.Provider) workCopy {
@@ -33,7 +33,6 @@ func fromProvider(p config.Provider) workCopy {
 		haiku:          m["ANTHROPIC_DEFAULT_HAIKU_MODEL"],
 		effort:         m["CLAUDE_CODE_EFFORT_LEVEL"],
 		disableTraffic: m["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"],
-		autoCompact:    m["CLAUDE_CODE_AUTO_COMPACT_WINDOW"],
 	}
 }
 
@@ -85,7 +84,6 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 			{"haiku", i18n.T("edit.field.haiku") + ": " + v(w.haiku)},
 			{"effort", i18n.T("edit.field.effort") + ": " + v(w.effort)},
 			{"disableTraffic", i18n.T("edit.field.disableTraffic") + ": " + v(w.disableTraffic)},
-			{"autoCompact", i18n.T("edit.field.autoCompact") + ": " + v(w.autoCompact)},
 			{"sep", ""},
 			{"toggle", toggleLabel(showSecret)},
 			{"sep", ""},
@@ -129,9 +127,6 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 				if val, ok := pp.Env["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"]; ok {
 					w.disableTraffic = val
 				}
-				if val, ok := pp.Env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"]; ok {
-					w.autoCompact = val
-				}
 			}
 		case "note":
 			if note, ok := ReadText(t, "  "+i18n.T("edit.noteInput")); ok {
@@ -164,13 +159,7 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 		case "effort":
 			w.effort = PickEffort(t, w.effort)
 		case "disableTraffic":
-			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.disableTraffic")), w.disableTraffic, false); ch {
-				w.disableTraffic = val
-			}
-		case "autoCompact":
-			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.autoCompact")), w.autoCompact, false); ch {
-				w.autoCompact = val
-			}
+			w.disableTraffic = PickDisableTraffic(t, w.disableTraffic)
 		case "toggle":
 			showSecret = !showSecret
 		case "save":
@@ -185,7 +174,6 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 				"ANTHROPIC_DEFAULT_HAIKU_MODEL":            w.haiku,
 				"CLAUDE_CODE_EFFORT_LEVEL":                 w.effort,
 				"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": w.disableTraffic,
-				"CLAUDE_CODE_AUTO_COMPACT_WINDOW":          w.autoCompact,
 			}
 			if w.auth == presets.AuthAPIKey {
 				fields["ANTHROPIC_API_KEY"] = w.token

@@ -63,7 +63,6 @@ var BuiltinPresets = []Preset{
 		Models: Models{Opus: "GLM-4.7", Sonnet: "GLM-4.7", Haiku: "glm-4.5-air"},
 		Env: map[string]string{
 			"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
-			"CLAUDE_CODE_AUTO_COMPACT_WINDOW":          "1000000",
 		},
 	},
 	{
@@ -102,7 +101,7 @@ func normalizeModels(raw any) Models {
 
 func normalizeEnv(raw any) map[string]string {
 	m, _ := raw.(map[string]any)
-	allowed := []string{"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "CLAUDE_CODE_AUTO_COMPACT_WINDOW"}
+	allowed := []string{"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"}
 	out := map[string]string{}
 	for _, key := range allowed {
 		if v, ok := m[key].(string); ok {

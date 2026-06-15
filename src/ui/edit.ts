@@ -14,7 +14,7 @@ import {
 } from '../config/store.js';
 import type { Preset } from '../config/types.js';
 import { T } from '../i18n/index.js';
-import { pickAuth, pickBaseUrl, pickEffort, pickProvider, pickProviderUrl } from './pickers.js';
+import { pickAuth, pickBaseUrl, pickDisableTraffic, pickEffort, pickProvider, pickProviderUrl } from './pickers.js';
 import { selectMenu } from './select.js';
 import { readText, readValue } from './text.js';
 
@@ -29,7 +29,6 @@ interface WorkCopy {
   haiku: string;
   effort: string;
   disableTraffic: string;
-  autoCompact: string;
 }
 
 function fromProvider(p: Provider): WorkCopy {
@@ -46,7 +45,6 @@ function fromProvider(p: Provider): WorkCopy {
     haiku: m.ANTHROPIC_DEFAULT_HAIKU_MODEL ?? '',
     effort: m.CLAUDE_CODE_EFFORT_LEVEL ?? '',
     disableTraffic: m.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC ?? '',
-    autoCompact: m.CLAUDE_CODE_AUTO_COMPACT_WINDOW ?? '',
   };
 }
 
@@ -74,7 +72,6 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
       { action: 'haiku', label: `${T('edit.field.haiku')}: ${v(W.haiku)}` },
       { action: 'effort', label: `${T('edit.field.effort')}: ${v(W.effort)}` },
       { action: 'disableTraffic', label: `${T('edit.field.disableTraffic')}: ${v(W.disableTraffic)}` },
-      { action: 'autoCompact', label: `${T('edit.field.autoCompact')}: ${v(W.autoCompact)}` },
       { action: 'sep', label: '' },
       { action: 'toggle', label: showSecret ? T('edit.toggleSecretHide') : T('edit.toggleSecretShow') },
       { action: 'sep', label: '' },
@@ -102,9 +99,6 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
           if (pp.effort) W.effort = pp.effort;
           if (pp.env && Object.prototype.hasOwnProperty.call(pp.env, 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC')) {
             W.disableTraffic = pp.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC ?? '';
-          }
-          if (pp.env && Object.prototype.hasOwnProperty.call(pp.env, 'CLAUDE_CODE_AUTO_COMPACT_WINDOW')) {
-            W.autoCompact = pp.env.CLAUDE_CODE_AUTO_COMPACT_WINDOW ?? '';
           }
         }
         break;
@@ -144,16 +138,9 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
       case 'effort':
         W.effort = await pickEffort(W.effort);
         break;
-      case 'disableTraffic': {
-        const r = await readValue(T('edit.field.disableTraffic').trim(), W.disableTraffic);
-        if (r.changed) W.disableTraffic = r.value;
+      case 'disableTraffic':
+        W.disableTraffic = await pickDisableTraffic(W.disableTraffic);
         break;
-      }
-      case 'autoCompact': {
-        const r = await readValue(T('edit.field.autoCompact').trim(), W.autoCompact);
-        if (r.changed) W.autoCompact = r.value;
-        break;
-      }
       case 'toggle':
         showSecret = !showSecret; // 仅切换显示，不改数据、不持久化
         break;
@@ -169,7 +156,6 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
           ANTHROPIC_DEFAULT_HAIKU_MODEL: W.haiku,
           CLAUDE_CODE_EFFORT_LEVEL: W.effort,
           CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: W.disableTraffic,
-          CLAUDE_CODE_AUTO_COMPACT_WINDOW: W.autoCompact,
         };
         if (W.auth === 'API_KEY') fields.ANTHROPIC_API_KEY = W.token;
         else fields.ANTHROPIC_AUTH_TOKEN = W.token;

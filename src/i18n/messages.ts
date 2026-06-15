@@ -113,7 +113,6 @@ export const messages: Record<string, Msg> = {
   'edit.field.haiku': { zh: 'haiku → 模型  ', en: 'haiku → model ' },
   'edit.field.effort': { zh: 'effort 思考档 ', en: 'effort level  ' },
   'edit.field.disableTraffic': { zh: '禁用非核心流量  ', en: 'Disable traffic ' },
-  'edit.field.autoCompact': { zh: '上下文窗口大小  ', en: 'Context window  ' },
   'edit.toggleSecretShow': { zh: '显示密钥明文（当前隐藏）', en: 'Show key in plaintext (now hidden)' },
   'edit.toggleSecretHide': { zh: '隐藏密钥（当前明文）', en: 'Hide key (now shown)' },
   'edit.save': { zh: '保存并返回', en: 'Save & back' },
@@ -139,6 +138,10 @@ export const messages: Record<string, Msg> = {
   'pick.effort.title': { zh: 'effort 思考档（当前：{0}）', en: 'effort level (current: {0})' },
   'pick.effort.empty': { zh: '留空（不设）', en: 'Leave empty' },
   'pick.effort.hint': { zh: '越往后越深入；auto=模型默认 · q 不改', en: 'deeper to the right; auto=model default · q keep' },
+
+  'pick.disableTraffic.title': { zh: '禁用非核心流量（当前：{0}）', en: 'Disable nonessential traffic (current: {0})' },
+  'pick.disableTraffic.yes': { zh: '是（值=1，GLM 等要求禁用）', en: 'Yes (value=1, required by GLM etc.)' },
+  'pick.disableTraffic.no': { zh: '否（留空，不设置）', en: 'No (leave empty)' },
 
   // —— 错误 ——
   'error.notFound': { zh: '找不到配置：{0}', en: 'Profile not found: {0}' },
