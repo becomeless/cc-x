@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="#install">Install</a> · <a href="#60-second-quick-start">Quick Start</a> · <a href="#two-modes-the-key-concept">Concepts</a> · <a href="#configuration">Config</a> · <a href="#faq">FAQ</a>
+  <a href="#-features">Features</a> · <a href="#-install">Install</a> · <a href="#-60-second-quick-start">Quick Start</a> · <a href="#-two-modes-the-key-concept">Concepts</a> · <a href="#-configuration">Config</a> · <a href="#-faq">FAQ</a>
 </p>
 
 ---
@@ -41,14 +41,25 @@ reads or writes any Claude Code config file. Your MCP, plugins, hooks — it won
   ↑↓ move · Enter open · e edit · s session · d set-default · Shift+↑↓ reorder · q quit
 ```
 
+> [!NOTE]
 > **Two builds**: the **native Go build** is recommended — GitHub Releases provide a lightweight
 > `xx` / `xx.exe` with no Node.js, for Windows x64, macOS Intel / Apple Silicon, Linux x64 / arm64.
 > If you prefer npm, install `@cc-x/cc-x` (command is still `xx`). Both builds are feature-equal.
 
 ---
 
-## Install
+## ✨ Features
 
+- **🛡️ No config files** — switching lives entirely at the env-var layer; it never reads or writes any Claude Code config file. MCP, plugins, hooks stay untouched.
+- **🧩 Process isolation** — each terminal sets its own env vars, so they never interfere, sidestepping the "edit a global file and break a running session" trap.
+- **⚡ Parallel terminals** — open many terminals, each on its own API; multiple Claudes run at once without clashing.
+- **📦 Zero deps** — a single native Go binary, no Node.js, for Windows / macOS / Linux alike.
+
+---
+
+## 📦 Install
+
+> [!IMPORTANT]
 > Install [Claude Code](https://claude.ai/code) first (`claude` on PATH). **Open a new terminal** after installing.
 
 ### Step 1 · Install CC-X
@@ -99,12 +110,13 @@ afterward; `xx --version` should show the new version.
 - **macOS / Linux**: `curl -fsSL https://github.com/becomeless/cc-x/releases/latest/download/install.sh | sh`
 - **npm**: `npm i -g @cc-x/cc-x@latest`
 
+> [!TIP]
 > With the menu's "Update check" set to "notify", CC-X shows a banner at the top of the menu
 > when a new version is out, with the matching upgrade command for your platform.
 
 ---
 
-## 60-second quick start
+## 🚀 60-second quick start
 
 The first run of `xx` seeds 4 profiles in `~/.cc-mini/providers.json` (Official + DeepSeek +
 Zhipu GLM + Xiaomi MiMo), **with empty keys**.
@@ -124,7 +136,7 @@ xx --help          # all options
 
 ---
 
-## Two modes (the key concept)
+## 🎯 Two modes (the key concept)
 
 Which API Claude uses is decided by **environment variables**. CC-X offers two scopes:
 
@@ -135,7 +147,8 @@ Which API Claude uses is decided by **environment variables**. CC-X offers two s
 | Running sessions | Unaffected | Unaffected (env freezes at process start) |
 | Best for | Parallel terminals on different APIs | Set your daily-driver API once |
 
-> 💡 **Analogy**: "Use this session" is a quick oil change — just for this trip. "Set default" is
+> [!TIP]
+> **Analogy**: "Use this session" is a quick oil change — just for this trip. "Set default" is
 > refilling the tank — every new drive uses it from now on.
 
 **Parallel example**: open 4 terminals and run `xx Official -s`, `xx DeepSeek -s`, `xx "Zhipu GLM" -s`,
@@ -147,46 +160,7 @@ Environment variables are naturally process-isolated.
 
 ---
 
-## When CC-X is NOT the right tool
-
-- You need to manage MCP, hooks, plugins, or multiple CLIs → use [cc-switch](https://github.com/farion1231/cc-switch)
-- You only use the official API, never switch → you don't need CC-X
-- You want automatic config migration/backup → that's outside CC-X's scope
-
-CC-X cares more about boundaries than features. It does one thing: **switch APIs**.
-
----
-
-## CC-X vs cc-switch
-
-cc-switch is an excellent full-featured GUI; CC-X takes the opposite, minimal approach.
-
-| | CC-X (`xx`) | cc-switch |
-|---|---|---|
-| Form | Terminal command (lightweight) | Desktop GUI (full-featured) |
-| Scope | Just API switching | API + MCP + multiple CLIs + prompts… |
-| Touches config? | **Never** (env vars only) | Rewrites config from its own DB |
-| Can lose MCP? | **Physically impossible** | Users have reported it |
-| Parallel terminals | **Native** (process isolation) | Global switch; sessions can clash |
-
-- → **CC-X**: terminal natives, parallel-session runners, anyone burned by a config-wrecking switcher, "just switch the API" people
-- → **cc-switch**: GUI preference, all-in-one MCP + multi-CLI management
-
----
-
-## Design philosophy
-
-> CC-X cares more about boundaries than features.
-
-Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 8 managed environment variables, then let Claude Code run.
-
-That constraint is deliberate: no writes to Claude Code config files, no MCP management, no automatic migration, no resident background controller. If process environment variables can solve it, CC-X avoids global files; if a choice matters, the user makes it explicitly. Doing less keeps the failure surface small.
-
-Issues / PRs are welcome, but the direction is clear: **make switching steadier, clearer, and less intrusive** before adding broader management power. Anything that writes a Claude Code config file will not be accepted.
-
----
-
-## Configuration
+## ⚙️ Configuration
 
 ### Fields
 
@@ -202,6 +176,7 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 | Disable nonessential traffic | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1` disables nonessential Claude Code traffic; empty = unset. Zhipu GLM defaults to `1` |
 | Context window | `CLAUDE_CODE_AUTO_COMPACT_WINDOW` | Fill with a Claude Code-supported window value; empty = unset |
 
+> [!NOTE]
 > CC-X **deliberately does not set** `ANTHROPIC_MODEL`. Use `/model opus|sonnet|haiku` in-session;
 > the mapping table translates to the provider's real model name.
 
@@ -221,6 +196,7 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 | Zhipu GLM | `https://open.bigmodel.cn/api/anthropic` | `GLM-4.7` | `glm-4.5-air` | — | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` |
 | Xiaomi MiMo | `https://api.xiaomimimo.com/anthropic` | `mimo-v2.5-pro` | `mimo-v2.5-pro` | — | — |
 
+> [!NOTE]
 > Model names change as providers update. Xiaomi MiMo has both pay-as-you-go and TokenPlan
 > endpoints; you pick one when selecting the provider.
 
@@ -238,7 +214,7 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 
 ---
 
-## Data & files
+## 💾 Data & files
 
 - **Profiles (plaintext keys, keep local)**: `~/.cc-mini/providers.json` (also holds `lang` and `update`)
 - **Provider catalog**: shipped `presets.json`; override at `~/.cc-mini/presets.json`
@@ -254,12 +230,49 @@ CC-X only touches these 8 "managed" variables (and clears the ones a target prof
 `ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`,
 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`.
 
-> 💡 To change `settings.json`, use Claude Code's own `/update-config` and describe what you want
+> [!TIP]
+> To change `settings.json`, use Claude Code's own `/update-config` and describe what you want
 > in natural language (e.g. "allow npm commands") — safer than letting an external tool rewrite it.
 
 ---
 
-## FAQ
+## 🤔 Is CC-X right for you?
+
+**Yes** — if you live in the terminal, often keep several terminals open, have been burned by a
+config-wrecking switcher, and just want the one thing: **switch APIs**.
+
+**No** — if you need any of these, [cc-switch](https://github.com/farion1231/cc-switch) fits better
+(it's an excellent full-featured GUI; CC-X takes the opposite, minimal route):
+
+- You need to manage MCP, hooks, plugins, or multiple CLIs
+- You want a GUI, or automatic config migration / backup
+- You only use the official API and never switch → you simply don't need CC-X
+
+### CC-X vs cc-switch
+
+| | CC-X (`xx`) | cc-switch |
+|---|---|---|
+| Form | Terminal command (lightweight) | Desktop GUI (full-featured) |
+| Scope | Just API switching | API + MCP + multiple CLIs + prompts… |
+| Touches config? | **Never** (env vars only) | Rewrites config from its own DB |
+| Can lose MCP? | **Physically impossible** | Users have reported it |
+| Parallel terminals | **Native** (process isolation) | Global switch; sessions can clash |
+
+---
+
+## 🧭 Design philosophy
+
+> CC-X cares more about boundaries than features.
+
+Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 8 managed environment variables, then let Claude Code run.
+
+That constraint is deliberate: no writes to Claude Code config files, no MCP management, no automatic migration, no resident background controller. If process environment variables can solve it, CC-X avoids global files; if a choice matters, the user makes it explicitly. Doing less keeps the failure surface small.
+
+Issues / PRs are welcome, but the direction is clear: **make switching steadier, clearer, and less intrusive** before adding broader management power. Anything that writes a Claude Code config file will not be accepted.
+
+---
+
+## ❓ FAQ
 
 **Does switching in one terminal affect another?** No. "Use this session" is process-scoped;
 "Set default" only affects new terminals.
@@ -285,7 +298,10 @@ For most users, the install command above is better: it picks the platform, veri
 
 ---
 
-## Uninstall
+## 🗑️ Uninstall
+
+<details>
+<summary>Show uninstall steps</summary>
 
 1. Clear env vars: `xx` → Official → Set default
 2. Remove the binary:
@@ -302,8 +318,10 @@ For most users, the install command above is better: it picks the platform, veri
    - npm: `npm uninstall -g @cc-x/cc-x`
 3. Delete data: `rm -rf ~/.cc-mini`
 
+</details>
+
 ---
 
-## License
+## 📄 License
 
 [MIT](LICENSE)

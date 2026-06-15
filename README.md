@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="#安装">安装</a> · <a href="#60-秒上手">上手</a> · <a href="#两种模式核心概念">概念</a> · <a href="#配置说明">配置</a> · <a href="#faq">FAQ</a>
+  <a href="#-特性">特性</a> · <a href="#-安装">安装</a> · <a href="#-60-秒上手">上手</a> · <a href="#-两种模式核心概念">概念</a> · <a href="#-配置说明">配置</a> · <a href="#-faq">FAQ</a>
 </p>
 
 ---
@@ -40,14 +40,25 @@ CC-X 把这事儿做到了最简——切换只在环境变量层，**不读写�
   ↑↓ 选择 · Enter 进入 · e 编辑 · s 启动 · d 设默认 · Shift+↑↓ 排序 · q 退出
 ```
 
+> [!NOTE]
 > **两个版本**：推荐 **Go 原生版**——GitHub Release 提供轻量 `xx` / `xx.exe`，无需 Node.js，
 > 覆盖 Windows x64、macOS Intel / Apple Silicon、Linux x64 / arm64。npm 用户可装
 > `@cc-x/cc-x`（命令仍是 `xx`）。两版功能一致。
 
 ---
 
-## 安装
+## ✨ 特性
 
+- **🛡️ 不碰配置** — 切换只在环境变量层，从不读写任何 Claude Code 配置文件；MCP、插件、hooks 一律不动。
+- **🧩 进程隔离** — 每个终端独立设环境变量，互不干扰，天然避开「改全局文件波及正在跑的会话」的坑。
+- **⚡ 多端并行** — 多开终端、各跑各的 API，多个 Claude 同时干活互不打架。
+- **📦 零依赖** — Go 原生单二进制，无需 Node.js，覆盖 Windows / macOS / Linux 全平台。
+
+---
+
+## 📦 安装
+
+> [!IMPORTANT]
 > 先装好 [Claude Code](https://claude.ai/code)（`claude` 在 PATH 中）。装完**新开一个终端**。
 
 ### Step 1 · 安装 CC-X
@@ -95,11 +106,12 @@ xx DeepSeek        # 设为默认，以后新终端自动生效
 - **macOS / Linux**：`curl -fsSL https://github.com/becomeless/cc-x/releases/latest/download/install.sh | sh`
 - **npm**：`npm i -g @cc-x/cc-x@latest`
 
+> [!TIP]
 > 把菜单里的「更新检查」开到「提醒」后，有新版时 CC-X 会在菜单顶部横幅提示，并直接给出上面对应平台的升级命令。
 
 ---
 
-## 60 秒上手
+## 🚀 60 秒上手
 
 首次运行 `xx` 会在 `~/.cc-mini/providers.json` 生成 4 个预设配置（官方 + DeepSeek + 智谱GLM + 小米MiMo），**密钥为空**。
 
@@ -118,7 +130,7 @@ xx --help          # 全部参数
 
 ---
 
-## 两种模式（核心概念）
+## 🎯 两种模式（核心概念）
 
 Claude 用哪个 API 由**环境变量**决定。CC-X 提供两种作用范围：
 
@@ -129,7 +141,8 @@ Claude 用哪个 API 由**环境变量**决定。CC-X 提供两种作用范围�
 | 对正在跑的会话 | 零影响 | 零影响（进程启动时已定型） |
 | 适合 | 多终端并行，各跑各的 API | 定好主力 API，不用老切 |
 
-> 💡 **打个比方**：「本次启用」是临时换油——只管这一趟；「设为默认」是换了油箱里的油——以后新上车都用这个。
+> [!TIP]
+> **打个比方**：「本次启用」是临时换油——只管这一趟；「设为默认」是换了油箱里的油——以后新上车都用这个。
 
 **并行示例**：开 4 个终端分别 `xx 官方 -s`、`xx DeepSeek -s`、`xx 智谱GLM -s`、`xx 小米MiMo -s`——四个 Claude 同时干活、各用各的 API、互不打架。
 
@@ -137,46 +150,7 @@ Claude 用哪个 API 由**环境变量**决定。CC-X 提供两种作用范围�
 
 ---
 
-## 什么时候不该用 CC-X
-
-- 你需要管理 MCP、hooks、插件、多 CLI → 用 [cc-switch](https://github.com/farion1231/cc-switch)
-- 你只用官方 API，不切第三方 → 不需要 CC-X
-- 你要自动迁移/备份配置 → 不在 CC-X 范围内
-
-CC-X 的边界比功能更重要。它只做一件事：**切 API**。
-
----
-
-## 和 cc-switch 怎么选
-
-cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
-
-| | CC-X (`xx`) | cc-switch |
-|---|---|---|
-| 形态 | 终端命令（轻量） | 桌面 GUI（全能） |
-| 职责 | 只切 API | API + MCP + 多 CLI + 提示词… |
-| 改配置文件？ | **不碰**（纯环境变量） | 会重写 |
-| 能弄丢 MCP？ | **不可能** | 有用户反馈被覆盖 |
-| 多终端并行 | **原生支持**（进程隔离） | 全局切换，容易互扰 |
-
-- → **CC-X**：命令行党、常多开终端、被切配置坑过、只想要「切 API」一件事
-- → **cc-switch**：要 GUI、要一站式管 MCP 和多 CLI
-
----
-
-## 设计哲学
-
-> CC-X 的边界比功能更重要。
-
-Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"，也不想把用户的配置收编进自己的数据库。它只站在 Claude Code 进程启动前的那一小步：把 8 个受管环境变量准备好，然后让 Claude Code 自己工作。
-
-所以它的取舍是有意的：不写 Claude Code 配置文件，不接管 MCP，不做自动迁移，不做后台常驻管理。能用进程环境变量解决，就不碰全局文件；能让用户显式选择，就不替用户自动决定。少做一点，是为了把风险面压到足够小。
-
-欢迎 Issue / PR，但方向很明确：**让切换更稳、更清楚、更不打扰用户**，比堆更多管理能力更重要。任何会写 Claude Code 配置文件的改动都不会被接受。
-
----
-
-## 配置说明
+## ⚙️ 配置说明
 
 ### 字段一览
 
@@ -192,6 +166,7 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
 | 禁用非核心流量 | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1`=禁用 Claude Code 非核心流量；留空=不设。GLM 预置为 `1` |
 | 上下文窗口大小 | `CLAUDE_CODE_AUTO_COMPACT_WINDOW` | 按 Claude Code 支持的窗口值填写；留空=不设 |
 
+> [!NOTE]
 > CC-X **刻意不设** `ANTHROPIC_MODEL`。在会话里用 `/model opus|sonnet|haiku` 选档，映射表负责翻译成对应供应商的模型名。
 
 ### 认证字段：AUTH_TOKEN vs API_KEY
@@ -210,6 +185,7 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
 | 智谱GLM | `https://open.bigmodel.cn/api/anthropic` | `GLM-4.7` | `glm-4.5-air` | — | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` |
 | 小米MiMo | `https://api.xiaomimimo.com/anthropic` | `mimo-v2.5-pro` | `mimo-v2.5-pro` | — | — |
 
+> [!NOTE]
 > 模型名随各家更新而变，以供应商官方接入文档为准。小米有按量付费和 TokenPlan 两个地址，选供应商时会让你挑。
 
 ### 进阶
@@ -221,7 +197,7 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
 
 ---
 
-## 数据与文件
+## 💾 数据与文件
 
 - **配置（含明文密钥，勿外传）**：`~/.cc-mini/providers.json`（也存界面语言 `lang`、更新检查 `update`）
 - **供应商目录**：随工具发布的 `presets.json`；`~/.cc-mini/presets.json` 可覆盖
@@ -234,11 +210,46 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
 CC-X 只动这 8 个「受管」环境变量，切换时清掉目标不用的：
 `ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_API_KEY`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`CLAUDE_CODE_EFFORT_LEVEL`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`。
 
-> 💡 需要改 `settings.json`？直接用 Claude Code 的 `/update-config` 说需求（如"允许 npm 命令"），比让外部工具改可靠。
+> [!TIP]
+> 需要改 `settings.json`？直接用 Claude Code 的 `/update-config` 说需求（如"允许 npm 命令"），比让外部工具改可靠。
 
 ---
 
-## FAQ
+## 🤔 该不该用 CC-X
+
+**适合你**——如果你是命令行党、常多开终端、被切配置坑过，只想要「切 API」这一件事。
+
+**不适合**——如果你需要这些，[cc-switch](https://github.com/farion1231/cc-switch) 更合适（它是优秀的全能 GUI，CC-X 走相反的极简路线）：
+
+- 你需要管理 MCP、hooks、插件、多 CLI
+- 你要 GUI，或要自动迁移 / 备份配置
+- 你只用官方 API，从不切第三方 → 那其实不需要 CC-X
+
+### 和 cc-switch 怎么选
+
+| | CC-X (`xx`) | cc-switch |
+|---|---|---|
+| 形态 | 终端命令（轻量） | 桌面 GUI（全能） |
+| 职责 | 只切 API | API + MCP + 多 CLI + 提示词… |
+| 改配置文件？ | **不碰**（纯环境变量） | 会重写 |
+| 能弄丢 MCP？ | **不可能** | 有用户反馈被覆盖 |
+| 多终端并行 | **原生支持**（进程隔离） | 全局切换，容易互扰 |
+
+---
+
+## 🧭 设计哲学
+
+> CC-X 的边界比功能更重要。
+
+Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"，也不想把用户的配置收编进自己的数据库。它只站在 Claude Code 进程启动前的那一小步：把 8 个受管环境变量准备好，然后让 Claude Code 自己工作。
+
+所以它的取舍是有意的：不写 Claude Code 配置文件，不接管 MCP，不做自动迁移，不做后台常驻管理。能用进程环境变量解决，就不碰全局文件；能让用户显式选择，就不替用户自动决定。少做一点，是为了把风险面压到足够小。
+
+欢迎 Issue / PR，但方向很明确：**让切换更稳、更清楚、更不打扰用户**，比堆更多管理能力更重要。任何会写 Claude Code 配置文件的改动都不会被接受。
+
+---
+
+## ❓ FAQ
 
 **一个终端切了，影响另一个吗？** 不影响。「本次启用」进程级，「设为默认」只对新终端生效。
 
@@ -256,7 +267,10 @@ CC-X 只动这 8 个「受管」环境变量，切换时清掉目标不用的：
 
 ---
 
-## 卸载
+## 🗑️ 卸载
+
+<details>
+<summary>展开卸载步骤</summary>
 
 1. 先清环境变量：`xx` → 选「官方」→ 设为默认
 2. 卸载本体：
@@ -273,8 +287,10 @@ CC-X 只动这 8 个「受管」环境变量，切换时清掉目标不用的：
    - npm：`npm uninstall -g @cc-x/cc-x`
 3. 删数据：`rm -rf ~/.cc-mini`
 
+</details>
+
 ---
 
-## 许可
+## 📄 许可
 
 [MIT](LICENSE)
