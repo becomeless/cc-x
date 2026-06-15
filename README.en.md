@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="#-features">Features</a> · <a href="#-install">Install</a> · <a href="#-60-second-quick-start">Quick Start</a> · <a href="#-two-modes-the-key-concept">Concepts</a> · <a href="#-configuration">Config</a> · <a href="#-faq">FAQ</a>
+  <a href="#features">Features</a> · <a href="#install">Install</a> · <a href="#60-second-quick-start">Quick Start</a> · <a href="#two-modes-the-key-concept">Concepts</a> · <a href="#configuration">Config</a> · <a href="#faq">FAQ</a>
 </p>
 
 ---
@@ -48,7 +48,7 @@ reads or writes any Claude Code config file. Your MCP, plugins, hooks — it won
 
 ---
 
-## ✨ Features
+## Features
 
 - **🛡️ No config files** — switching lives entirely at the env-var layer; it never reads or writes any Claude Code config file. MCP, plugins, hooks stay untouched.
 - **🧩 Process isolation** — each terminal sets its own env vars, so they never interfere, sidestepping the "edit a global file and break a running session" trap.
@@ -57,7 +57,7 @@ reads or writes any Claude Code config file. Your MCP, plugins, hooks — it won
 
 ---
 
-## 📦 Install
+## Install
 
 > [!IMPORTANT]
 > Install [Claude Code](https://claude.ai/code) first (`claude` on PATH). **Open a new terminal** after installing.
@@ -116,7 +116,7 @@ afterward; `xx --version` should show the new version.
 
 ---
 
-## 🚀 60-second quick start
+## 60-second quick start
 
 The first run of `xx` seeds 4 profiles in `~/.cc-mini/providers.json` (Official + DeepSeek +
 Zhipu GLM + Xiaomi MiMo), **with empty keys**.
@@ -136,7 +136,7 @@ xx --help          # all options
 
 ---
 
-## 🎯 Two modes (the key concept)
+## Two modes (the key concept)
 
 Which API Claude uses is decided by **environment variables**. CC-X offers two scopes:
 
@@ -160,7 +160,7 @@ Environment variables are naturally process-isolated.
 
 ---
 
-## ⚙️ Configuration
+## Configuration
 
 ### Fields
 
@@ -174,7 +174,6 @@ Environment variables are naturally process-isolated.
 | haiku → model | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
 | effort level | `CLAUDE_CODE_EFFORT_LEVEL` | `low`–`max`; `auto` = model default; empty = unset. Third parties may not honor it |
 | Disable nonessential traffic | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1` disables nonessential Claude Code traffic; empty = unset. Zhipu GLM defaults to `1` |
-| Context window | `CLAUDE_CODE_AUTO_COMPACT_WINDOW` | Fill with a Claude Code-supported window value; empty = unset |
 
 > [!NOTE]
 > CC-X **deliberately does not set** `ANTHROPIC_MODEL`. Use `/model opus|sonnet|haiku` in-session;
@@ -214,7 +213,7 @@ Environment variables are naturally process-isolated.
 
 ---
 
-## 💾 Data & files
+## Data & files
 
 - **Profiles (plaintext keys, keep local)**: `~/.cc-mini/providers.json` (also holds `lang` and `update`)
 - **Provider catalog**: shipped `presets.json`; override at `~/.cc-mini/presets.json`
@@ -236,7 +235,7 @@ CC-X only touches these 8 "managed" variables (and clears the ones a target prof
 
 ---
 
-## 🤔 Is CC-X right for you?
+## Is CC-X right for you?
 
 **Yes** — if you live in the terminal, often keep several terminals open, have been burned by a
 config-wrecking switcher, and just want the one thing: **switch APIs**.
@@ -260,7 +259,7 @@ config-wrecking switcher, and just want the one thing: **switch APIs**.
 
 ---
 
-## 🧭 Design philosophy
+## Design philosophy
 
 > CC-X cares more about boundaries than features.
 
@@ -272,7 +271,7 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 **Does switching in one terminal affect another?** No. "Use this session" is process-scoped;
 "Set default" only affects new terminals.
@@ -298,7 +297,7 @@ For most users, the install command above is better: it picks the platform, veri
 
 ---
 
-## 🗑️ Uninstall
+## Uninstall
 
 <details>
 <summary>Show uninstall steps</summary>
@@ -322,6 +321,6 @@ For most users, the install command above is better: it picks the platform, veri
 
 ---
 
-## 📄 License
+## License
 
 [MIT](LICENSE)

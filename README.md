@@ -16,7 +16,7 @@
 </p>
 
 <p align="center">
-  <a href="#-特性">特性</a> · <a href="#-安装">安装</a> · <a href="#-60-秒上手">上手</a> · <a href="#-两种模式核心概念">概念</a> · <a href="#-配置说明">配置</a> · <a href="#-faq">FAQ</a>
+  <a href="#特性">特性</a> · <a href="#安装">安装</a> · <a href="#60-秒上手">上手</a> · <a href="#两种模式核心概念">概念</a> · <a href="#配置说明">配置</a> · <a href="#faq">FAQ</a>
 </p>
 
 ---
@@ -47,7 +47,7 @@ CC-X 把这事儿做到了最简——切换只在环境变量层，**不读写�
 
 ---
 
-## ✨ 特性
+## 特性
 
 - **🛡️ 不碰配置** — 切换只在环境变量层，从不读写任何 Claude Code 配置文件；MCP、插件、hooks 一律不动。
 - **🧩 进程隔离** — 每个终端独立设环境变量，互不干扰，天然避开「改全局文件波及正在跑的会话」的坑。
@@ -56,7 +56,7 @@ CC-X 把这事儿做到了最简——切换只在环境变量层，**不读写�
 
 ---
 
-## 📦 安装
+## 安装
 
 > [!IMPORTANT]
 > 先装好 [Claude Code](https://claude.ai/code)（`claude` 在 PATH 中）。装完**新开一个终端**。
@@ -111,7 +111,7 @@ xx DeepSeek        # 设为默认，以后新终端自动生效
 
 ---
 
-## 🚀 60 秒上手
+## 60 秒上手
 
 首次运行 `xx` 会在 `~/.cc-mini/providers.json` 生成 4 个预设配置（官方 + DeepSeek + 智谱GLM + 小米MiMo），**密钥为空**。
 
@@ -130,7 +130,7 @@ xx --help          # 全部参数
 
 ---
 
-## 🎯 两种模式（核心概念）
+## 两种模式（核心概念）
 
 Claude 用哪个 API 由**环境变量**决定。CC-X 提供两种作用范围：
 
@@ -150,7 +150,7 @@ Claude 用哪个 API 由**环境变量**决定。CC-X 提供两种作用范围�
 
 ---
 
-## ⚙️ 配置说明
+## 配置说明
 
 ### 字段一览
 
@@ -164,7 +164,6 @@ Claude 用哪个 API 由**环境变量**决定。CC-X 提供两种作用范围�
 | haiku → 模型 | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
 | effort 思考档 | `CLAUDE_CODE_EFFORT_LEVEL` | `low` ~ `max`；`auto`=模型默认；留空=不设。第三方不一定生效 |
 | 禁用非核心流量 | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1`=禁用 Claude Code 非核心流量；留空=不设。GLM 预置为 `1` |
-| 上下文窗口大小 | `CLAUDE_CODE_AUTO_COMPACT_WINDOW` | 按 Claude Code 支持的窗口值填写；留空=不设 |
 
 > [!NOTE]
 > CC-X **刻意不设** `ANTHROPIC_MODEL`。在会话里用 `/model opus|sonnet|haiku` 选档，映射表负责翻译成对应供应商的模型名。
@@ -197,7 +196,7 @@ Claude 用哪个 API 由**环境变量**决定。CC-X 提供两种作用范围�
 
 ---
 
-## 💾 数据与文件
+## 数据与文件
 
 - **配置（含明文密钥，勿外传）**：`~/.cc-mini/providers.json`（也存界面语言 `lang`、更新检查 `update`）
 - **供应商目录**：随工具发布的 `presets.json`；`~/.cc-mini/presets.json` 可覆盖
@@ -215,7 +214,7 @@ CC-X 只动这 8 个「受管」环境变量，切换时清掉目标不用的：
 
 ---
 
-## 🤔 该不该用 CC-X
+## 该不该用 CC-X
 
 **适合你**——如果你是命令行党、常多开终端、被切配置坑过，只想要「切 API」这一件事。
 
@@ -237,7 +236,7 @@ CC-X 只动这 8 个「受管」环境变量，切换时清掉目标不用的：
 
 ---
 
-## 🧭 设计哲学
+## 设计哲学
 
 > CC-X 的边界比功能更重要。
 
@@ -249,7 +248,7 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
 
 ---
 
-## ❓ FAQ
+## FAQ
 
 **一个终端切了，影响另一个吗？** 不影响。「本次启用」进程级，「设为默认」只对新终端生效。
 
@@ -267,7 +266,7 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
 
 ---
 
-## 🗑️ 卸载
+## 卸载
 
 <details>
 <summary>展开卸载步骤</summary>
@@ -291,6 +290,6 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
 
 ---
 
-## 📄 许可
+## 许可
 
 [MIT](LICENSE)
