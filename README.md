@@ -1,7 +1,7 @@
 <h1 align="center">CC-X</h1>
 
 <p align="center">
-  <strong>不碰配置 · 进程隔离 · 多端并行 · 零依赖</strong>
+  <strong>一件事做好，不替你多做一步</strong>
 </p>
 
 <p align="center">
@@ -21,28 +21,15 @@
 
 ---
 
-> `xx` — Claude Code 多 API 切换，一个命令搞定。**不碰配置，不怕翻车。**
+> `xx` — Claude Code 多 API 切换，一个命令搞定。
 
-用 Claude Code 连第三方 API？每次手打环境变量太烦，换工具切又怕弄丢 MCP。
-CC-X 把这事儿做到了最简——切换只在环境变量层，**不读写任何 Claude Code 配置文件**。
-你的 MCP、插件、hooks，它碰都不会碰。
+CC-X 只做一件事：切换 Claude Code 用哪个 API。切换只在**环境变量层**——不读写任何 Claude Code 配置文件，MCP、插件、hooks 碰都不碰。
 
-```text
-  CC-X v0.4.12     默认：官方
+![CC-X 主菜单](docs/screenshots/menu.png)
 
-     官方
-   ▶ DeepSeek     公司   · effort=max
-     智谱GLM             · 密钥未填
-     小米MiMo            · 密钥未填
+![CC-X 操作菜单](docs/screenshots/actions.png)
 
-     新增配置  ·  切换到 English  ·  更新检查：关闭  ·  退出
-
-  ↑↓ 选择 · Enter 进入 · e 编辑 · s 启动 · d 设默认 · Shift+↑↓ 排序 · q 退出
-```
-
-> **两个版本**：推荐 **Go 原生版**——GitHub Release 提供轻量 `xx` / `xx.exe`，无需 Node.js，
-> 覆盖 Windows x64、macOS Intel / Apple Silicon、Linux x64 / arm64。npm 用户可装
-> `@cc-x/cc-x`（命令仍是 `xx`）。两版功能一致。
+![CC-X 编辑配置](docs/screenshots/edit.png)
 
 ---
 
@@ -73,6 +60,8 @@ curl -fsSL https://github.com/becomeless/cc-x/releases/latest/download/install.s
 ```bash
 npm install -g @cc-x/cc-x
 ```
+
+> 推荐 **Go 原生版**——GitHub Release 提供轻量 `xx` / `xx.exe`，无需 Node.js，覆盖 Windows x64、macOS Intel / Apple Silicon、Linux x64 / arm64。npm 用户可装 `@cc-x/cc-x`（命令仍是 `xx`）。两版功能一致。
 
 ### Step 2 · 配置 API 密钥
 
@@ -147,6 +136,16 @@ CC-X 的边界比功能更重要。它只做一件事：**切 API**。
 
 ---
 
+## 设计哲学
+
+> CC-X 的边界比功能更重要。
+
+Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"——它只站在进程启动前那一小步：把 8 个受管环境变量准备好，然后让 Claude Code 自己工作。不写配置文件，不接管 MCP，不做后台常驻管理；能让用户显式选择，就不替用户自动决定。
+
+欢迎 Issue / PR，但方向很明确：**让切换更稳、更清楚、更不打扰用户**，比堆更多管理能力更重要。任何会写 Claude Code 配置文件的改动都不会被接受。
+
+---
+
 ## 和 cc-switch 怎么选
 
 cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
@@ -161,18 +160,6 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 
 - → **CC-X**：命令行党、常多开终端、被切配置坑过、只想要「切 API」一件事
 - → **cc-switch**：要 GUI、要一站式管 MCP 和多 CLI
-
----
-
-## 设计哲学
-
-> CC-X 的边界比功能更重要。
-
-Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"，也不想把用户的配置收编进自己的数据库。它只站在 Claude Code 进程启动前的那一小步：把 8 个受管环境变量准备好，然后让 Claude Code 自己工作。
-
-所以它的取舍是有意的：不写 Claude Code 配置文件，不接管 MCP，不做自动迁移，不做后台常驻管理。能用进程环境变量解决，就不碰全局文件；能让用户显式选择，就不替用户自动决定。少做一点，是为了把风险面压到足够小。
-
-欢迎 Issue / PR，但方向很明确：**让切换更稳、更清楚、更不打扰用户**，比堆更多管理能力更重要。任何会写 Claude Code 配置文件的改动都不会被接受。
 
 ---
 
@@ -228,7 +215,6 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
   - Windows → 注册表 `HKCU\Environment` + 广播一次变更
   - Unix → shell 启动文件 `# >>> xx >>>` … `# <<< xx <<<` 标记块（幂等重写，按 `$SHELL` 选文件）
   - 语义一致：**只影响新终端**；切到「官方」会清除全部受管变量
-- **不修改任何 Claude Code 配置文件。** 启动第三方前只读探测一次 `~/.claude.json` 的 onboarding 字段，用于提示。
 
 CC-X 只动这 8 个「受管」环境变量，切换时清掉目标不用的：
 `ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_API_KEY`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`CLAUDE_CODE_EFFORT_LEVEL`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`。
@@ -248,10 +234,6 @@ CC-X 只动这 8 个「受管」环境变量，切换时清掉目标不用的：
 **第三方 effort 没效果？** effort 是 Claude 模型特性，第三方不一定支持。DeepSeek 推荐 `max`，其余留空。
 
 **密钥安全吗？** 明文存本机用户目录，受账户权限保护。别把 `providers.json` 提交到仓库。
-
-**能指定安装目录吗？** 可以。Windows 安装脚本支持 `-InstallDir`；macOS / Linux 可用 `CCX_INSTALL_DIR` 或 `--install-dir`。只有少数用户需要改，默认安装最省心；如果改过目录，卸载时也传同一个目录。
-
-**能手动下载二进制吗？** 可以，到 [GitHub Releases](https://github.com/becomeless/cc-x/releases/latest) 下载对应系统的 zip / tar.gz，解压后把 `xx` / `xx.exe` 放到 PATH 里的目录。普通用户建议用上面的安装命令：会自动选平台、做校验，并处理 PATH / 卸载。
 
 ---
 
