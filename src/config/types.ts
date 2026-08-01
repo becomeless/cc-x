@@ -4,7 +4,7 @@
  * 数据格式必须与现版 PowerShell 完全兼容（老用户的 ~/.cc-mini/providers.json 能直接读）。
  */
 
-/** 受管的 8 个环境变量（工具只动这些，其它一律不碰）。详见 plan §2。 */
+/** 受管的 10 个环境变量（工具只动这些，其它一律不碰）。详见 plan §2。 */
 export const KNOWN_KEYS = [
   'ANTHROPIC_BASE_URL',
   'ANTHROPIC_AUTH_TOKEN',
@@ -12,6 +12,8 @@ export const KNOWN_KEYS = [
   'ANTHROPIC_DEFAULT_OPUS_MODEL',
   'ANTHROPIC_DEFAULT_SONNET_MODEL',
   'ANTHROPIC_DEFAULT_HAIKU_MODEL',
+  'ANTHROPIC_DEFAULT_FABLE_MODEL',
+  'CLAUDE_CODE_SUBAGENT_MODEL',
   'CLAUDE_CODE_EFFORT_LEVEL',
   'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
 ] as const;
@@ -51,15 +53,16 @@ export interface PresetUrl {
   url: string;
 }
 
-/** 三档模型映射（可部分为空）。 */
+/** 四档模型映射（可部分为空）。 */
 export interface PresetModels {
   opus?: string;
   sonnet?: string;
   haiku?: string;
+  fable?: string;
 }
 
 /** 供应商目录可预填的额外受管变量。不接受鉴权字段，避免把 presets 变成密钥载体。 */
-export type PresetEnv = Partial<Record<'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', string>>;
+export type PresetEnv = Partial<Record<'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC' | 'CLAUDE_CODE_SUBAGENT_MODEL', string>>;
 
 /** presets.json 里的一个「供应商」（provider）目录条目。 */
 export interface Preset {
@@ -69,4 +72,8 @@ export interface Preset {
   models: PresetModels;
   effort?: string;
   env?: PresetEnv;
+  /** 模型列表端点；缺省推导 `{base}/v1/models`（MiMo 路径不同需显式）。 */
+  modelsApi?: string;
+  /** 支持 1M 上下文的模型 ID 前缀表（`[1m]` 后缀默认开关）。 */
+  models1m?: string[];
 }

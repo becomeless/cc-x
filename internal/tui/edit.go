@@ -10,8 +10,8 @@ import (
 )
 
 type workCopy struct {
-	name, note, base, auth, token, opus, sonnet, haiku, effort string
-	disableTraffic                                             string
+	name, note, base, auth, token, opus, sonnet, haiku, fable, subagent, effort string
+	disableTraffic                                                              string
 }
 
 func fromProvider(p config.Provider) workCopy {
@@ -31,6 +31,8 @@ func fromProvider(p config.Provider) workCopy {
 		opus:           m["ANTHROPIC_DEFAULT_OPUS_MODEL"],
 		sonnet:         m["ANTHROPIC_DEFAULT_SONNET_MODEL"],
 		haiku:          m["ANTHROPIC_DEFAULT_HAIKU_MODEL"],
+		fable:          m["ANTHROPIC_DEFAULT_FABLE_MODEL"],
+		subagent:       m["CLAUDE_CODE_SUBAGENT_MODEL"],
 		effort:         m["CLAUDE_CODE_EFFORT_LEVEL"],
 		disableTraffic: m["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"],
 	}
@@ -41,6 +43,89 @@ func toggleLabel(show bool) string {
 		return i18n.T("edit.toggleSecretHide")
 	}
 	return i18n.T("edit.toggleSecretShow")
+}
+
+// findPreset 按显示名在目录里找供应商；自定义名找不到返回 nil（仍可手敲）。
+func findPreset(catalog []presets.Preset, name string) *presets.Preset {
+	for i := range catalog {
+		if catalog[i].Name == name {
+			return &catalog[i]
+		}
+	}
+	return nil
+}
+
+// doFetchModels 拉取模型列表并应用到档位（失败/取消都安静回表单，不打断编辑）。
+func doFetchModels(t *Terminal, w *workCopy, catalog []presets.Preset) {
+	if strings.TrimSpace(w.base) == "" || strings.TrimSpace(w.token) == "" {
+		fmt.Printf("  %s\n", i18n.T("models.needBaseKey"))
+		return
+	}
+	pp := findPreset(catalog, w.name)
+	var endpoint string
+	if pp != nil {
+		endpoint = pp.ModelsAPI
+	}
+	fmt.Printf("  %s\n", i18n.T("models.fetching"))
+	models, err := presets.FetchModels(w.base, w.token, endpoint)
+	if err != nil {
+		fmt.Printf("  %s\n", i18n.T("models.fail", err))
+		return
+	}
+	items := make([]string, 0, len(models))
+	is1M := make(map[int]bool, len(models))
+	for i, m := range models {
+		label := m.ID
+		if presets.Supports1M(pp, m.ID) {
+			label += "  [1M]"
+			is1M[i] = true
+		}
+		items = append(items, label)
+	}
+	sel := SelectMenu(t, SelectOptions{Title: i18n.T("models.title"), Items: items, Start: 0, Hint: i18n.T("models.hint"), NoNumber: true})
+	if sel < 0 {
+		return
+	}
+	model := models[sel].ID
+	if is1M[sel] {
+		// 命中 1M 表：让用户选 1M 还是 200K（默认推荐 1M，不用手敲 [1m]）。
+		ctxItems := []string{
+			model + "[1m]" + "  " + i18n.T("models.ctx1m"),
+			model + "  " + i18n.T("models.ctx200k"),
+		}
+		csel := SelectMenu(t, SelectOptions{Title: i18n.T("models.ctxTitle"), Items: ctxItems, Start: 0, Hint: i18n.T("models.ctxHint"), NoNumber: true})
+		if csel < 0 {
+			return
+		}
+		if csel == 0 {
+			model += "[1m]"
+		}
+	}
+	// 应用到档位（subagent 是省钱档，不参与「全部」）。
+	slots := []string{"opus", "sonnet", "haiku", "fable", "all"}
+	slotItems := []string{
+		i18n.T("edit.field.opus") + ": " + model,
+		i18n.T("edit.field.sonnet") + ": " + model,
+		i18n.T("edit.field.haiku") + ": " + model,
+		i18n.T("edit.field.fable") + ": " + model,
+		i18n.T("models.applyAll"),
+	}
+	asel := SelectMenu(t, SelectOptions{Title: i18n.T("models.applyTitle"), Items: slotItems, Start: 0, Hint: i18n.T("models.applyHint"), NoNumber: true})
+	if asel < 0 {
+		return
+	}
+	switch slots[asel] {
+	case "opus":
+		w.opus = model
+	case "sonnet":
+		w.sonnet = model
+	case "haiku":
+		w.haiku = model
+	case "fable":
+		w.fable = model
+	default: // all
+		w.opus, w.sonnet, w.haiku, w.fable = model, model, model, model
+	}
 }
 
 // EditForm 编辑 prov（就地修改）；保存返回 true，放弃返回 false。对应 npm 版 editForm。
@@ -82,6 +167,9 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 			{"opus", i18n.T("edit.field.opus") + ": " + v(w.opus)},
 			{"sonnet", i18n.T("edit.field.sonnet") + ": " + v(w.sonnet)},
 			{"haiku", i18n.T("edit.field.haiku") + ": " + v(w.haiku)},
+			{"fable", i18n.T("edit.field.fable") + ": " + v(w.fable)},
+			{"subagent", i18n.T("edit.field.subagent") + ": " + v(w.subagent)},
+			{"models", i18n.T("edit.action.models")},
 			{"effort", i18n.T("edit.field.effort") + ": " + v(w.effort)},
 			{"disableTraffic", i18n.T("edit.field.disableTraffic") + ": " + v(w.disableTraffic)},
 			{"sep", ""},
@@ -121,6 +209,9 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 				if pp.Models.Haiku != "" {
 					w.haiku = pp.Models.Haiku
 				}
+				if pp.Models.Fable != "" {
+					w.fable = pp.Models.Fable
+				}
 				if pp.Effort != "" {
 					w.effort = pp.Effort
 				}
@@ -156,6 +247,16 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.haiku")), w.haiku, false); ch {
 				w.haiku = val
 			}
+		case "fable":
+			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.fable")), w.fable, false); ch {
+				w.fable = val
+			}
+		case "subagent":
+			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.subagent")), w.subagent, false); ch {
+				w.subagent = val
+			}
+		case "models":
+			doFetchModels(t, &w, catalog)
 		case "effort":
 			w.effort = PickEffort(t, w.effort)
 		case "disableTraffic":
@@ -172,6 +273,8 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 				"ANTHROPIC_DEFAULT_OPUS_MODEL":             w.opus,
 				"ANTHROPIC_DEFAULT_SONNET_MODEL":           w.sonnet,
 				"ANTHROPIC_DEFAULT_HAIKU_MODEL":            w.haiku,
+				"ANTHROPIC_DEFAULT_FABLE_MODEL":            w.fable,
+				"CLAUDE_CODE_SUBAGENT_MODEL":               w.subagent,
 				"CLAUDE_CODE_EFFORT_LEVEL":                 w.effort,
 				"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": w.disableTraffic,
 			}
