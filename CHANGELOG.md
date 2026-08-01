@@ -1,5 +1,13 @@
 # 更新日志
 
+## v0.4.16 — 2026-08-01
+
+- 新增：编辑表单档位行（opus/sonnet/haiku/fable）支持「从模型列表选择」——从供应商 API 拉取实际可用模型（兼容 Anthropic / OpenAI 两种响应格式，防御「HTTP 200 + 业务错误体」），支持 1M 的模型标 `[1M]` 并自动附 `[1m]` 后缀，一步填入；失败明确报错并回退手动输入（Go / TypeScript 双版本对齐）
+- 修复：模型列表端点解析——DeepSeek 的 Anthropic 兼容端点未实现 `GET /v1/models`（有效 key 时 404），预设显式指向 OpenAI 风格端点 `api.deepseek.com/models`；MiMo 端点按 BASE_URL 前缀匹配（按量/TokenPlan 各自正确）；预设匹配改为按 BASE_URL 优先（「DeepSeek 2」等改名配置也能命中，端点/1M 表跟着 base 走）；错误信息带实际请求 URL
+- 修复：模型操作错误改由表单顶部 Status 提示条展示，不再被下一次菜单清屏吞掉
+- 编辑表单「子代理 → 模型」行为空时显示「默认」（官方默认 = 继承主模型）
+- `presets.json` 新增可选字段 `models_api` / `models_api_map`（模型列表端点，缺省推导 `{base}/v1/models`）
+
 ## v0.4.13 — 2026-08-01
 
 - 新增：模型映射第四档 `fable`（`ANTHROPIC_DEFAULT_FABLE_MODEL`），对齐 Claude Code 官方 4 个模型别名（fable/opus/sonnet/haiku）；编辑表单新增「子代理 → 模型」行（`CLAUDE_CODE_SUBAGENT_MODEL`），受管键 8→10（Go / TypeScript 双版本对齐）
