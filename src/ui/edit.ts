@@ -74,10 +74,18 @@ function resolveModelsEndpoint(pp: Preset | undefined, baseUrl: string): string 
   return pp.modelsApi;
 }
 
-/** 构建模型列表菜单条目与 1M 标记（命中供应商 1M 表的标 [1M]）。对齐 Go 版 buildModelItems。 */
+/** 构建模型列表菜单条目与 1M 标记（命中供应商 1M 表的标 [1M]）。对齐 Go 版 buildModelItems。
+ *  有 display_name 且与 ID 不同时显示「友好名 (实际ID)」——主标签可读，括号里是选中后真正填入的值。 */
 function buildModelItems(models: ModelInfo[], pp: Preset | undefined): { items: string[]; is1M: boolean[] } {
   const is1M = models.map((m) => supports1M(pp, m.id));
-  const items = models.map((m, i) => (is1M[i] ? `${m.id}  [1M]` : m.id));
+  const items = models.map((m, i) => {
+    let label = m.id;
+    if (m.displayName && m.displayName !== m.id) {
+      label = `${m.displayName} (${m.id})`;
+    }
+    if (is1M[i]) label += '  [1M]';
+    return label;
+  });
   return { items, is1M };
 }
 

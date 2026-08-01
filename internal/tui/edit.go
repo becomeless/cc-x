@@ -106,16 +106,21 @@ func catalogPreset(catalog []presets.Preset, w *workCopy) *presets.Preset {
 }
 
 // buildModelItems 构建模型列表菜单条目与 1M 标记（命中供应商 1M 表的标 [1M]）。
+// 有 display_name 且与 ID 不同（如 GLM 返回 "GLM-5.2" + id "glm-5.2"）时显示「友好名 (实际ID)」——
+// 主标签可读，括号里是选中后真正填入的值。
 func buildModelItems(models []presets.ModelInfo, pp *presets.Preset) (items []string, is1M []bool) {
 	items = make([]string, 0, len(models))
 	is1M = make([]bool, len(models))
 	for i, m := range models {
-		if presets.Supports1M(pp, m.ID) {
-			items = append(items, m.ID+"  [1M]")
-			is1M[i] = true
-		} else {
-			items = append(items, m.ID)
+		label := m.ID
+		if m.DisplayName != "" && m.DisplayName != m.ID {
+			label = m.DisplayName + " (" + m.ID + ")"
 		}
+		if presets.Supports1M(pp, m.ID) {
+			label += "  [1M]"
+			is1M[i] = true
+		}
+		items = append(items, label)
 	}
 	return items, is1M
 }
