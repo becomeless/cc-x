@@ -1,5 +1,11 @@
 # 更新日志
 
+## v0.4.13 — 2026-08-01
+
+- 新增：模型映射第四档 `fable`（`ANTHROPIC_DEFAULT_FABLE_MODEL`），对齐 Claude Code 官方 4 个模型别名（fable/opus/sonnet/haiku）；编辑表单新增「子代理 → 模型」行（`CLAUDE_CODE_SUBAGENT_MODEL`），受管键 8→10（Go / TypeScript 双版本对齐）
+- subagent 模型预设**不预置默认值**——留空即官方默认（子代理继承主会话模型）；想省钱可在配置中自行填 `haiku`（别名，跟随本配置的 haiku 档）或具体模型 ID
+- 新增：编辑表单「↻ 获取模型列表」——从供应商 API 拉取可用模型（`{base}/v1/models`，兼容 Anthropic / OpenAI 两种响应格式，防御 GLM 式「HTTP 200 + 业务错误体」），支持 1M 的模型标 `[1M]` 并可一键附 `[1m]` 后缀，选中后应用到 opus/sonnet/haiku/fable 档位；获取失败回退手敲。`presets.json` 新增可选字段 `models_api`（MiMo 的 models 端点是 OpenAI 风格 `/v1/models`，需显式指定）与 `models_1m`（1M 支持表）
+
 ## v0.4.12 — 2026-06-15
 
 - 主菜单大幅减负，聚焦「选哪个配置」：删除标题副标题（只留版本 + 默认）、删除「当前终端」状态行；行内去掉 `密钥已设/密钥·API_KEY/登录态` 文字与 host 列，配置「能不能用」改由名字亮/灰区分（缺密钥=名字变灰 + 末尾 `· 密钥未填`），`effort` 保留并锚成最右一列
