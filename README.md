@@ -168,7 +168,7 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 
 > CC-X 的边界比功能更重要。
 
-Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"，也不想把用户的配置收编进自己的数据库。它只站在 Claude Code 进程启动前的那一小步：把 8 个受管环境变量准备好，然后让 Claude Code 自己工作。
+Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"，也不想把用户的配置收编进自己的数据库。它只站在 Claude Code 进程启动前的那一小步：把 10 个受管环境变量准备好，然后让 Claude Code 自己工作。
 
 所以它的取舍是有意的：不写 Claude Code 配置文件，不接管 MCP，不做自动迁移，不做后台常驻管理。能用进程环境变量解决，就不碰全局文件；能让用户显式选择，就不替用户自动决定。少做一点，是为了把风险面压到足够小。
 
@@ -185,13 +185,16 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
 | API 地址 | `ANTHROPIC_BASE_URL` | 第三方接入点；官方留空=登录态 |
 | 认证字段 | — | 密钥放 `AUTH_TOKEN`（默认）还是 `API_KEY`；**放错会 401** |
 | API 密钥 | `ANTHROPIC_AUTH_TOKEN` 或 `ANTHROPIC_API_KEY` | 对应认证字段的值 |
-| opus → 模型 | `ANTHROPIC_DEFAULT_OPUS_MODEL` | 三档模型映射；后台任务走 haiku 档，**必须填** |
+| opus → 模型 | `ANTHROPIC_DEFAULT_OPUS_MODEL` | 四档模型映射；后台任务走 haiku 档，**必须填** |
 | sonnet → 模型 | `ANTHROPIC_DEFAULT_SONNET_MODEL` | |
 | haiku → 模型 | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
+| fable → 模型 | `ANTHROPIC_DEFAULT_FABLE_MODEL` | 最强档（如 Fable 5）；供应商没这档就留空 |
+| 子代理 → 模型 | `CLAUDE_CODE_SUBAGENT_MODEL` | 子代理/agent teams 用模型；**留空=官方默认（继承主模型）**。想省钱可填 `haiku`（别名，跟随本配置的 haiku 档）或具体模型名 |
+| ↻ 获取模型列表 | — | 从供应商 API 拉取可用模型，选中后可选 `[1m]` 后缀再应用到档位；失败回退手敲 |
 | effort 思考档 | `CLAUDE_CODE_EFFORT_LEVEL` | `low` ~ `max`；`auto`=模型默认；留空=不设。第三方不一定生效 |
 | 禁用非核心流量 | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1`=禁用 Claude Code 非核心流量；留空=不设。GLM 预置为 `1` |
 
-> CC-X **刻意不设** `ANTHROPIC_MODEL`。在会话里用 `/model opus|sonnet|haiku` 选档，映射表负责翻译成对应供应商的模型名。
+> CC-X **刻意不设** `ANTHROPIC_MODEL`。在会话里用 `/model opus|sonnet|haiku|fable` 选档，映射表负责翻译成对应供应商的模型名。
 
 ### 认证字段：AUTH_TOKEN vs API_KEY
 
@@ -210,6 +213,7 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
 | 小米MiMo | `https://api.xiaomimimo.com/anthropic` | `mimo-v2.5-pro` | `mimo-v2.5-pro` | — | — |
 
 > 模型名随各家更新而变，以供应商官方接入文档为准。小米有按量付费和 TokenPlan 两个地址，选供应商时会让你挑。
+> 预置的「获取模型列表」支持 1M 的模型（如 `deepseek-v4-pro`、`glm-5.2`、`mimo-v2.5-pro`）会标 `[1M]`，选中后可自动附 `[1m]` 后缀，无需手敲。
 
 ### 进阶
 
@@ -230,8 +234,8 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
   - 语义一致：**只影响新终端**；切到「官方」会清除全部受管变量
 - **不修改任何 Claude Code 配置文件。** 启动第三方前只读探测一次 `~/.claude.json` 的 onboarding 字段，用于提示。
 
-CC-X 只动这 8 个「受管」环境变量，切换时清掉目标不用的：
-`ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_API_KEY`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`CLAUDE_CODE_EFFORT_LEVEL`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`。
+CC-X 只动这 10 个「受管」环境变量，切换时清掉目标不用的：
+`ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_API_KEY`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`ANTHROPIC_DEFAULT_FABLE_MODEL`、`CLAUDE_CODE_SUBAGENT_MODEL`、`CLAUDE_CODE_EFFORT_LEVEL`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`。
 
 > 💡 需要改 `settings.json`？直接用 Claude Code 的 `/update-config` 说需求（如"允许 npm 命令"），比让外部工具改可靠。
 

@@ -4,6 +4,7 @@
  * 新需求（plan §7）：密钥行默认掩码 `********`，提供「👁 显示/隐藏密钥明文」开关——
  * 仅影响本表单的**显示**，不改数据、不持久化；默认隐藏防肩窥。输入态（readValue secret）另算。
  */
+import { fetchModels, supports1M, type ModelInfo } from '../config/models.js';
 import {
   buildProviderEnv,
   getProviderEnvMap,
@@ -27,8 +28,74 @@ interface WorkCopy {
   opus: string;
   sonnet: string;
   haiku: string;
+  fable: string;
+  subagent: string;
   effort: string;
   disableTraffic: string;
+}
+
+function findPreset(catalog: Preset[], name: string): Preset | undefined {
+  return catalog.find((p) => p.name === name);
+}
+
+/**
+ * 拉取模型列表并应用到档位（失败/取消都安静回表单，不打断编辑）。对齐 Go 版 doFetchModels。
+ * subagent 是省钱档，不参与「全部」。
+ */
+async function doFetchModels(W: WorkCopy, catalog: Preset[]): Promise<void> {
+  if (W.base.trim() === '' || W.token.trim() === '') {
+    console.log(`  ${T('models.needBaseKey')}`);
+    return;
+  }
+  const pp = findPreset(catalog, W.name);
+  console.log(`  ${T('models.fetching')}`);
+  let models: ModelInfo[];
+  try {
+    models = await fetchModels(W.base, W.token, pp?.modelsApi);
+  } catch (err) {
+    console.log(`  ${T('models.fail', err instanceof Error ? err.message : String(err))}`);
+    return;
+  }
+  const is1M = models.map((m) => supports1M(pp, m.id));
+  const items = models.map((m, i) => (is1M[i] ? `${m.id}  [1M]` : m.id));
+  const sel = await selectMenu({ title: T('models.title'), items, start: 0, hint: T('models.hint'), noNumber: true });
+  if (sel < 0) return;
+  const picked = models[sel];
+  if (!picked) return;
+  let model = picked.id;
+  if (is1M[sel]) {
+    // 命中 1M 表：让用户选 1M 还是 200K（默认推荐 1M，不用手敲 [1m]）。
+    const ctxItems = [`${model}[1m]  ${T('models.ctx1m')}`, `${model}  ${T('models.ctx200k')}`];
+    const csel = await selectMenu({ title: T('models.ctxTitle'), items: ctxItems, start: 0, hint: T('models.ctxHint'), noNumber: true });
+    if (csel < 0) return;
+    if (csel === 0) model += '[1m]';
+  }
+  const slotItems = [
+    `${T('edit.field.opus')}: ${model}`,
+    `${T('edit.field.sonnet')}: ${model}`,
+    `${T('edit.field.haiku')}: ${model}`,
+    `${T('edit.field.fable')}: ${model}`,
+    T('models.applyAll'),
+  ];
+  const asel = await selectMenu({ title: T('models.applyTitle'), items: slotItems, start: 0, hint: T('models.applyHint'), noNumber: true });
+  if (asel < 0) return;
+  switch (asel) {
+    case 0:
+      W.opus = model;
+      break;
+    case 1:
+      W.sonnet = model;
+      break;
+    case 2:
+      W.haiku = model;
+      break;
+    case 3:
+      W.fable = model;
+      break;
+    default:
+      W.opus = W.sonnet = W.haiku = W.fable = model;
+      break;
+  }
 }
 
 function fromProvider(p: Provider): WorkCopy {
@@ -43,6 +110,8 @@ function fromProvider(p: Provider): WorkCopy {
     opus: m.ANTHROPIC_DEFAULT_OPUS_MODEL ?? '',
     sonnet: m.ANTHROPIC_DEFAULT_SONNET_MODEL ?? '',
     haiku: m.ANTHROPIC_DEFAULT_HAIKU_MODEL ?? '',
+    fable: m.ANTHROPIC_DEFAULT_FABLE_MODEL ?? '',
+    subagent: m.CLAUDE_CODE_SUBAGENT_MODEL ?? '',
     effort: m.CLAUDE_CODE_EFFORT_LEVEL ?? '',
     disableTraffic: m.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC ?? '',
   };
@@ -70,6 +139,9 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
       { action: 'opus', label: `${T('edit.field.opus')}: ${v(W.opus)}` },
       { action: 'sonnet', label: `${T('edit.field.sonnet')}: ${v(W.sonnet)}` },
       { action: 'haiku', label: `${T('edit.field.haiku')}: ${v(W.haiku)}` },
+      { action: 'fable', label: `${T('edit.field.fable')}: ${v(W.fable)}` },
+      { action: 'subagent', label: `${T('edit.field.subagent')}: ${v(W.subagent)}` },
+      { action: 'models', label: T('edit.action.models') },
       { action: 'effort', label: `${T('edit.field.effort')}: ${v(W.effort)}` },
       { action: 'disableTraffic', label: `${T('edit.field.disableTraffic')}: ${v(W.disableTraffic)}` },
       { action: 'sep', label: '' },
@@ -96,6 +168,7 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
           if (pp.models.opus) W.opus = pp.models.opus;
           if (pp.models.sonnet) W.sonnet = pp.models.sonnet;
           if (pp.models.haiku) W.haiku = pp.models.haiku;
+          if (pp.models.fable) W.fable = pp.models.fable;
           if (pp.effort) W.effort = pp.effort;
           if (pp.env && Object.prototype.hasOwnProperty.call(pp.env, 'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC')) {
             W.disableTraffic = pp.env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC ?? '';
@@ -135,6 +208,19 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
         if (r.changed) W.haiku = r.value;
         break;
       }
+      case 'fable': {
+        const r = await readValue(T('edit.field.fable').trim(), W.fable);
+        if (r.changed) W.fable = r.value;
+        break;
+      }
+      case 'subagent': {
+        const r = await readValue(T('edit.field.subagent').trim(), W.subagent);
+        if (r.changed) W.subagent = r.value;
+        break;
+      }
+      case 'models':
+        await doFetchModels(W, catalog);
+        break;
       case 'effort':
         W.effort = await pickEffort(W.effort);
         break;
@@ -154,6 +240,8 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
           ANTHROPIC_DEFAULT_OPUS_MODEL: W.opus,
           ANTHROPIC_DEFAULT_SONNET_MODEL: W.sonnet,
           ANTHROPIC_DEFAULT_HAIKU_MODEL: W.haiku,
+          ANTHROPIC_DEFAULT_FABLE_MODEL: W.fable,
+          CLAUDE_CODE_SUBAGENT_MODEL: W.subagent,
           CLAUDE_CODE_EFFORT_LEVEL: W.effort,
           CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: W.disableTraffic,
         };

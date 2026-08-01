@@ -25,6 +25,7 @@ export const BUILTIN_PRESETS: Preset[] = [
     effort: 'max',
     urls: [{ label: 'Anthropic 兼容', url: 'https://api.deepseek.com/anthropic' }],
     models: { opus: 'deepseek-v4-pro', sonnet: 'deepseek-v4-pro', haiku: 'deepseek-v4-flash' },
+    models1m: ['deepseek-v4-pro'],
   },
   {
     name: '智谱GLM',
@@ -34,6 +35,7 @@ export const BUILTIN_PRESETS: Preset[] = [
     env: {
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
     },
+    models1m: ['glm-5.2'],
   },
   {
     name: '小米MiMo',
@@ -43,6 +45,9 @@ export const BUILTIN_PRESETS: Preset[] = [
       { label: 'TokenPlan', url: 'https://token-plan-cn.xiaomimimo.com/anthropic' },
     ],
     models: { opus: 'mimo-v2.5-pro', sonnet: 'mimo-v2.5-pro', haiku: 'mimo-v2.5-pro' },
+    // MiMo 的 models 端点是 OpenAI 风格 /v1/models（不带 /anthropic 前缀），必须显式给
+    modelsApi: 'https://api.xiaomimimo.com/v1/models',
+    models1m: ['mimo-v2.5-pro'],
   },
   {
     name: '官方Anthropic',
@@ -65,10 +70,11 @@ function normalizeModels(raw: unknown): PresetModels {
   if (typeof m.opus === 'string') models.opus = m.opus;
   if (typeof m.sonnet === 'string') models.sonnet = m.sonnet;
   if (typeof m.haiku === 'string') models.haiku = m.haiku;
+  if (typeof m.fable === 'string') models.fable = m.fable;
   return models;
 }
 
-const PRESET_ENV_KEYS = ['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC'] as const;
+const PRESET_ENV_KEYS = ['CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC', 'CLAUDE_CODE_SUBAGENT_MODEL'] as const;
 
 function normalizeEnv(raw: unknown): PresetEnv | undefined {
   const m = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
@@ -89,6 +95,11 @@ function normalizePreset(raw: unknown): Preset | undefined {
   if (typeof p.effort === 'string' && p.effort.trim()) preset.effort = p.effort.trim();
   const env = normalizeEnv(p.env);
   if (env) preset.env = env;
+  if (typeof p.models_api === 'string' && p.models_api.trim()) preset.modelsApi = p.models_api.trim();
+  if (Array.isArray(p.models_1m)) {
+    const list = p.models_1m.map(asString).map((s) => s.trim()).filter(Boolean);
+    if (list.length > 0) preset.models1m = list;
+  }
   return preset;
 }
 

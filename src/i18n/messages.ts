@@ -111,6 +111,9 @@ export const messages: Record<string, Msg> = {
   'edit.field.opus': { zh: 'opus  → 模型  ', en: 'opus  → model ' },
   'edit.field.sonnet': { zh: 'sonnet→ 模型  ', en: 'sonnet→ model ' },
   'edit.field.haiku': { zh: 'haiku → 模型  ', en: 'haiku → model ' },
+  'edit.field.fable': { zh: 'fable → 模型  ', en: 'fable → model ' },
+  'edit.field.subagent': { zh: '子代理 → 模型  ', en: 'subagent→ model ' },
+  'edit.action.models': { zh: '↻ 获取模型列表（从 API 拉取可选模型）', en: '↻ Fetch model list from API' },
   'edit.field.effort': { zh: 'effort 思考档 ', en: 'effort level  ' },
   'edit.field.disableTraffic': { zh: '禁用非核心流量  ', en: 'Disable traffic ' },
   'edit.toggleSecretShow': { zh: '显示密钥明文（当前隐藏）', en: 'Show key in plaintext (now hidden)' },
@@ -142,6 +145,20 @@ export const messages: Record<string, Msg> = {
   'pick.disableTraffic.title': { zh: '禁用非核心流量（当前：{0}）', en: 'Disable nonessential traffic (current: {0})' },
   'pick.disableTraffic.yes': { zh: '是（值=1，GLM 等要求禁用）', en: 'Yes (value=1, required by GLM etc.)' },
   'pick.disableTraffic.no': { zh: '否（留空，不设置）', en: 'No (leave empty)' },
+
+  // —— 获取模型列表 ——
+  'models.needBaseKey': { zh: '请先填写 API 地址和 API 密钥。', en: 'Fill in API URL and key first.' },
+  'models.fetching': { zh: '获取模型列表中…', en: 'Fetching models…' },
+  'models.fail': { zh: '获取模型列表失败：{0}', en: 'Failed to fetch models: {0}' },
+  'models.title': { zh: '模型列表（↑↓ 选择 · Enter 确认 · q 取消）', en: 'Models (↑↓ pick · Enter confirm · q cancel)' },
+  'models.hint': { zh: '[1M] = 该模型支持 1M 上下文（选中后可选后缀）', en: '[1M] = model supports 1M context (suffix pick after select)' },
+  'models.ctxTitle': { zh: '上下文窗口', en: 'Context window' },
+  'models.ctx1m': { zh: '1M 上下文（自动加 [1m] 后缀，推荐）', en: '1M context (auto [1m] suffix, recommended)' },
+  'models.ctx200k': { zh: '200K 上下文（无后缀）', en: '200K context (no suffix)' },
+  'models.ctxHint': { zh: '↑↓ 选择 · Enter 确认 · q 取消', en: '↑↓ pick · Enter confirm · q cancel' },
+  'models.applyTitle': { zh: '应用到哪个档位？', en: 'Apply to which slot?' },
+  'models.applyAll': { zh: '全部档位（opus/sonnet/haiku/fable）', en: 'All slots (opus/sonnet/haiku/fable)' },
+  'models.applyHint': { zh: '↑↓ 选择 · Enter 应用 · q 取消', en: '↑↓ pick · Enter apply · q cancel' },
 
   // —— 错误 ——
   'error.notFound': { zh: '找不到配置：{0}', en: 'Profile not found: {0}' },

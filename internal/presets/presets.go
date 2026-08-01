@@ -29,21 +29,24 @@ type URL struct {
 	URL   string `json:"url"`
 }
 
-// Models 是三档模型映射（可部分为空）。
+// Models 是四档模型映射（可部分为空）。
 type Models struct {
 	Opus   string `json:"opus,omitempty"`
 	Sonnet string `json:"sonnet,omitempty"`
 	Haiku  string `json:"haiku,omitempty"`
+	Fable  string `json:"fable,omitempty"`
 }
 
 // Preset 是一个「供应商」目录条目。
 type Preset struct {
-	Name   string            `json:"name"`
-	Auth   string            `json:"auth"` // AUTH_TOKEN | API_KEY
-	URLs   []URL             `json:"urls"`
-	Models Models            `json:"models"`
-	Effort string            `json:"effort,omitempty"`
-	Env    map[string]string `json:"env,omitempty"`
+	Name      string            `json:"name"`
+	Auth      string            `json:"auth"` // AUTH_TOKEN | API_KEY
+	URLs      []URL             `json:"urls"`
+	Models    Models            `json:"models"`
+	Effort    string            `json:"effort,omitempty"`
+	Env       map[string]string `json:"env,omitempty"`
+	ModelsAPI string            `json:"models_api,omitempty"` // 模型列表端点；缺省推导 {base}/v1/models（MiMo 路径不同需显式）
+	Models1M  []string          `json:"models_1m,omitempty"`  // 支持 1M 上下文的模型 ID 前缀表（[1m] 后缀默认开关）
 }
 
 // BuiltinPresets 是内置兜底目录，镜像仓库根 presets.json（由 presets_test.go 对拍保证不漂）。
@@ -54,7 +57,8 @@ var BuiltinPresets = []Preset{
 		Auth:   AuthToken,
 		Effort: "max",
 		URLs:   []URL{{Label: "Anthropic 兼容", URL: "https://api.deepseek.com/anthropic"}},
-		Models: Models{Opus: "deepseek-v4-pro", Sonnet: "deepseek-v4-pro", Haiku: "deepseek-v4-flash"},
+		Models:   Models{Opus: "deepseek-v4-pro", Sonnet: "deepseek-v4-pro", Haiku: "deepseek-v4-flash"},
+		Models1M: []string{"deepseek-v4-pro"},
 	},
 	{
 		Name:   "智谱GLM",
@@ -64,6 +68,7 @@ var BuiltinPresets = []Preset{
 		Env: map[string]string{
 			"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
 		},
+		Models1M: []string{"glm-5.2"},
 	},
 	{
 		Name: "小米MiMo",
@@ -73,6 +78,9 @@ var BuiltinPresets = []Preset{
 			{Label: "TokenPlan", URL: "https://token-plan-cn.xiaomimimo.com/anthropic"},
 		},
 		Models: Models{Opus: "mimo-v2.5-pro", Sonnet: "mimo-v2.5-pro", Haiku: "mimo-v2.5-pro"},
+		// MiMo 的 models 端点是 OpenAI 风格 /v1/models（不带 /anthropic 前缀），必须显式给
+		ModelsAPI: "https://api.xiaomimimo.com/v1/models",
+		Models1M:  []string{"mimo-v2.5-pro"},
 	},
 	{
 		Name:   "官方Anthropic",
@@ -96,12 +104,12 @@ func normalizeURL(raw any) URL {
 
 func normalizeModels(raw any) Models {
 	m, _ := raw.(map[string]any)
-	return Models{Opus: asString(m["opus"]), Sonnet: asString(m["sonnet"]), Haiku: asString(m["haiku"])}
+	return Models{Opus: asString(m["opus"]), Sonnet: asString(m["sonnet"]), Haiku: asString(m["haiku"]), Fable: asString(m["fable"])}
 }
 
 func normalizeEnv(raw any) map[string]string {
 	m, _ := raw.(map[string]any)
-	allowed := []string{"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"}
+	allowed := []string{"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", "CLAUDE_CODE_SUBAGENT_MODEL"}
 	out := map[string]string{}
 	for _, key := range allowed {
 		if v, ok := m[key].(string); ok {
@@ -134,6 +142,14 @@ func normalizePreset(raw any) (Preset, bool) {
 	p := Preset{Name: name, Auth: auth, URLs: urls, Models: normalizeModels(m["models"]), Env: normalizeEnv(m["env"])}
 	if e := strings.TrimSpace(asString(m["effort"])); e != "" {
 		p.Effort = e
+	}
+	p.ModelsAPI = strings.TrimSpace(asString(m["models_api"]))
+	if arr, ok := m["models_1m"].([]any); ok {
+		for _, item := range arr {
+			if s := strings.TrimSpace(asString(item)); s != "" {
+				p.Models1M = append(p.Models1M, s)
+			}
+		}
 	}
 	return p, true
 }

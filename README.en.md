@@ -178,7 +178,7 @@ cc-switch is an excellent full-featured GUI; CC-X takes the opposite, minimal ap
 
 > CC-X cares more about boundaries than features.
 
-Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 8 managed environment variables, then let Claude Code run.
+Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 10 managed environment variables, then let Claude Code run.
 
 That constraint is deliberate: no writes to Claude Code config files, no MCP management, no automatic migration, no resident background controller. If process environment variables can solve it, CC-X avoids global files; if a choice matters, the user makes it explicitly. Doing less keeps the failure surface small.
 
@@ -195,13 +195,16 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 | API URL | `ANTHROPIC_BASE_URL` | Third-party endpoint; empty for Official = logged-in session |
 | Auth field | — | `AUTH_TOKEN` (default) or `API_KEY`; **wrong one = 401** |
 | API key | `ANTHROPIC_AUTH_TOKEN` or `ANTHROPIC_API_KEY` | Value for the chosen auth field |
-| opus → model | `ANTHROPIC_DEFAULT_OPUS_MODEL` | Three-tier model mapping; haiku also covers background tasks — **must be set** |
+| opus → model | `ANTHROPIC_DEFAULT_OPUS_MODEL` | Four-tier model mapping; haiku also covers background tasks — **must be set** |
 | sonnet → model | `ANTHROPIC_DEFAULT_SONNET_MODEL` | |
 | haiku → model | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
+| fable → model | `ANTHROPIC_DEFAULT_FABLE_MODEL` | Top tier (e.g. Fable 5); leave empty if the provider has none |
+| subagent → model | `CLAUDE_CODE_SUBAGENT_MODEL` | Model for subagents/agent teams; **empty = official default (inherit main model)**. To save cost, fill `haiku` (alias, follows this profile's haiku tier) or a concrete model ID |
+| ↻ Fetch models | — | Pulls available models from the provider API; pick one, optionally attach `[1m]`, then apply to a tier. Falls back to manual input on failure |
 | effort level | `CLAUDE_CODE_EFFORT_LEVEL` | `low`–`max`; `auto` = model default; empty = unset. Third parties may not honor it |
 | Disable nonessential traffic | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1` disables nonessential Claude Code traffic; empty = unset. Zhipu GLM defaults to `1` |
 
-> CC-X **deliberately does not set** `ANTHROPIC_MODEL`. Use `/model opus|sonnet|haiku` in-session;
+> CC-X **deliberately does not set** `ANTHROPIC_MODEL`. Use `/model opus|sonnet|haiku|fable` in-session;
 > the mapping table translates to the provider's real model name.
 
 ### Auth field: AUTH_TOKEN vs API_KEY
@@ -222,6 +225,8 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 
 > Model names change as providers update. Xiaomi MiMo has both pay-as-you-go and TokenPlan
 > endpoints; you pick one when selecting the provider.
+> In "Fetch models", models known to support 1M context (e.g. `deepseek-v4-pro`, `glm-5.2`,
+> `mimo-v2.5-pro`) are marked `[1M]`; selecting one can auto-append the `[1m]` suffix — no typing.
 
 ### Advanced
 
@@ -248,10 +253,10 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 - **No Claude Code config file is ever modified.** Before third-party launches, CC-X only reads
   the onboarding field in `~/.claude.json` to decide whether to print a hint.
 
-CC-X only touches these 8 "managed" variables (and clears the ones a target profile doesn't use):
+CC-X only touches these 10 "managed" variables (and clears the ones a target profile doesn't use):
 `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `ANTHROPIC_DEFAULT_OPUS_MODEL`,
-`ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`,
-`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`.
+`ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `ANTHROPIC_DEFAULT_FABLE_MODEL`,
+`CLAUDE_CODE_SUBAGENT_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`.
 
 > 💡 To change `settings.json`, use Claude Code's own `/update-config` and describe what you want
 > in natural language (e.g. "allow npm commands") — safer than letting an external tool rewrite it.
