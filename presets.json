@@ -20,6 +20,7 @@
     "env": {
       "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
     },
+    "models_api": "https://open.bigmodel.cn/api/anthropic/v1/models",
     "models_1m": ["glm-5.2"]
   },
   {

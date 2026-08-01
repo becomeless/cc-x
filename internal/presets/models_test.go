@@ -87,6 +87,8 @@ func TestSupports1M(t *testing.T) {
 		{"deepseek-v4-pro[1m]", true},
 		{"deepseek-v4-flash", false},
 		{"glm-5.2", true},
+		{"GLM-5.2", true},    // 大小写不敏感（API 可能返回大写）
+		{"GLM-5.2[1m]", true}, // 大写 + 后缀
 		{"glm-5.2-air", true}, // 前缀匹配
 		{"mimo-v2.5-pro", false},
 	}

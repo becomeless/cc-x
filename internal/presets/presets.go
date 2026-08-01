@@ -70,7 +70,8 @@ var BuiltinPresets = []Preset{
 		Env: map[string]string{
 			"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
 		},
-		Models1M: []string{"glm-5.2"},
+		ModelsAPI: "https://open.bigmodel.cn/api/anthropic/v1/models",
+		Models1M:  []string{"glm-5.2"},
 	},
 	{
 		Name: "小米MiMo",

@@ -64,11 +64,11 @@ export function parseModels(body: string): ModelInfo[] {
   return out;
 }
 
-/** 判断模型是否命中供应商的 1M 支持表（前缀匹配，先剥掉已有的 [1m] 后缀）。 */
+/** 判断模型是否命中供应商的 1M 支持表（前缀匹配，先剥掉已有的 [1m] 后缀，大小写不敏感）。 */
 export function supports1M(p: Preset | undefined, modelId: string): boolean {
   if (!p?.models1m?.length) return false;
-  const id = modelId.trim().replace(/\[1m\]$/, '');
-  return p.models1m.some((item) => id.startsWith(item));
+  const id = modelId.trim().replace(/\[1m\]$/, '').toLowerCase();
+  return p.models1m.some((item) => id.startsWith(item.toLowerCase()));
 }
 
 /** 尽力从错误响应体提取可读信息（error.message / msg / message / detail）。 */

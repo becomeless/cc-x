@@ -21,15 +21,16 @@ type ModelInfo struct {
 	DisplayName string // 可能为空（OpenAI 风格响应没有）
 }
 
-// Supports1M 判断模型是否命中供应商的 1M 支持表（前缀匹配，先剥掉已有的 [1m] 后缀）。
+// Supports1M 判断模型是否命中供应商的 1M 支持表（前缀匹配，先剥掉已有的 [1m] 后缀，大小写不敏感——
+// API 返回的模型 ID 大小写可能与表不一致，如 glm-5.2 vs GLM-5.2）。
 // 用于「获取模型列表」时给支持 1M 的模型默认推荐 [1m] 后缀。
 func Supports1M(p *Preset, modelID string) bool {
 	if p == nil {
 		return false
 	}
-	id := strings.TrimSuffix(strings.TrimSpace(modelID), "[1m]")
+	id := strings.ToLower(strings.TrimSuffix(strings.TrimSpace(modelID), "[1m]"))
 	for _, item := range p.Models1M {
-		if strings.HasPrefix(id, item) {
+		if strings.HasPrefix(id, strings.ToLower(item)) {
 			return true
 		}
 	}

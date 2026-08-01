@@ -36,6 +36,7 @@ export const BUILTIN_PRESETS: Preset[] = [
     env: {
       CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1',
     },
+    modelsApi: 'https://open.bigmodel.cn/api/anthropic/v1/models',
     models1m: ['glm-5.2'],
   },
   {
