@@ -15,6 +15,7 @@ import {
 } from '../config/store.js';
 import type { Preset } from '../config/types.js';
 import { T } from '../i18n/index.js';
+import { displayWidth, padDisplay } from '../utils/display.js';
 import { pickAuth, pickBaseUrl, pickDisableTraffic, pickEffort, pickProvider, pickProviderUrl } from './pickers.js';
 import { selectMenu } from './select.js';
 import { readText, readValue } from './text.js';
@@ -180,19 +181,25 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
   for (;;) {
     const v = (x: string): string => (x === '' ? T('empty.paren') : x);
     const keyDisp = W.token === '' ? T('empty.paren') : showSecret ? W.token : '********';
+    // 12 个字段行（顺序即行序，密钥行索引为 4）。标签按显示宽度统一补齐后再拼冒号——
+    // 中英混排 + 全角/半角字符时手写尾部空格数不可靠（→ 宽度还随终端字体变化），对齐在渲染时计算。
+    const fieldRows: Array<{ action: string; label: string; value: string }> = [
+      { action: 'provider', label: T('edit.field.provider'), value: v(W.name) },
+      { action: 'note', label: T('edit.field.note'), value: v(W.note) },
+      { action: 'base', label: T('edit.field.base'), value: v(W.base) },
+      { action: 'auth', label: T('edit.field.auth'), value: W.auth },
+      { action: 'key', label: T('edit.field.key'), value: keyDisp },
+      { action: 'opus', label: T('edit.field.opus'), value: v(W.opus) },
+      { action: 'sonnet', label: T('edit.field.sonnet'), value: v(W.sonnet) },
+      { action: 'haiku', label: T('edit.field.haiku'), value: v(W.haiku) },
+      { action: 'fable', label: T('edit.field.fable'), value: v(W.fable) },
+      { action: 'subagent', label: T('edit.field.subagent'), value: subagentLabel(W.subagent) },
+      { action: 'effort', label: T('edit.field.effort'), value: v(W.effort) },
+      { action: 'disableTraffic', label: T('edit.field.disableTraffic'), value: v(W.disableTraffic) },
+    ];
+    const labelW = fieldRows.reduce((m, f) => Math.max(m, displayWidth(f.label)), 0);
     const rows: Array<{ action: string; label: string }> = [
-      { action: 'provider', label: `${T('edit.field.provider')}: ${v(W.name)}` },
-      { action: 'note', label: `${T('edit.field.note')}: ${v(W.note)}` },
-      { action: 'base', label: `${T('edit.field.base')}: ${v(W.base)}` },
-      { action: 'auth', label: `${T('edit.field.auth')}: ${W.auth}` },
-      { action: 'key', label: `${T('edit.field.key')}: ${keyDisp}` },
-      { action: 'opus', label: `${T('edit.field.opus')}: ${v(W.opus)}` },
-      { action: 'sonnet', label: `${T('edit.field.sonnet')}: ${v(W.sonnet)}` },
-      { action: 'haiku', label: `${T('edit.field.haiku')}: ${v(W.haiku)}` },
-      { action: 'fable', label: `${T('edit.field.fable')}: ${v(W.fable)}` },
-      { action: 'subagent', label: `${T('edit.field.subagent')}: ${subagentLabel(W.subagent)}` },
-      { action: 'effort', label: `${T('edit.field.effort')}: ${v(W.effort)}` },
-      { action: 'disableTraffic', label: `${T('edit.field.disableTraffic')}: ${v(W.disableTraffic)}` },
+      ...fieldRows.map((f) => ({ action: f.action, label: `${padDisplay(f.label, labelW)}: ${f.value}` })),
       { action: 'sep', label: '' },
       { action: 'toggle', label: showSecret ? T('edit.toggleSecretHide') : T('edit.toggleSecretShow') },
       { action: 'sep', label: '' },

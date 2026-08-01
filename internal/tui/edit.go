@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/becomeless/cc-x/internal/config"
+	"github.com/becomeless/cc-x/internal/display"
 	"github.com/becomeless/cc-x/internal/i18n"
 	"github.com/becomeless/cc-x/internal/presets"
 )
@@ -218,26 +219,40 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 				keyDisp = "********"
 			}
 		}
-		type row struct{ action, label string }
-		rows := []row{
-			{"provider", i18n.T("edit.field.provider") + ": " + v(w.name)},
-			{"note", i18n.T("edit.field.note") + ": " + v(w.note)},
-			{"base", i18n.T("edit.field.base") + ": " + v(w.base)},
-			{"auth", i18n.T("edit.field.auth") + ": " + w.auth},
-			{"key", i18n.T("edit.field.key") + ": " + keyDisp},
-			{"opus", i18n.T("edit.field.opus") + ": " + v(w.opus)},
-			{"sonnet", i18n.T("edit.field.sonnet") + ": " + v(w.sonnet)},
-			{"haiku", i18n.T("edit.field.haiku") + ": " + v(w.haiku)},
-			{"fable", i18n.T("edit.field.fable") + ": " + v(w.fable)},
-			{"subagent", i18n.T("edit.field.subagent") + ": " + subagentLabel(w.subagent)},
-			{"effort", i18n.T("edit.field.effort") + ": " + v(w.effort)},
-			{"disableTraffic", i18n.T("edit.field.disableTraffic") + ": " + v(w.disableTraffic)},
-			{"sep", ""},
-			{"toggle", toggleLabel(showSecret)},
-			{"sep", ""},
-			{"save", i18n.T("edit.save")},
-			{"discard", i18n.T("edit.discard")},
+		// 12 个字段行（顺序即行序，密钥行索引为 4）。标签按显示宽度统一补齐后再拼冒号——
+		// 中英混排 + 全角/半角字符时手写尾部空格数不可靠（→ 宽度还随终端字体变化），对齐在渲染时计算。
+		fieldRows := []struct{ action, label, value string }{
+			{"provider", i18n.T("edit.field.provider"), v(w.name)},
+			{"note", i18n.T("edit.field.note"), v(w.note)},
+			{"base", i18n.T("edit.field.base"), v(w.base)},
+			{"auth", i18n.T("edit.field.auth"), w.auth},
+			{"key", i18n.T("edit.field.key"), keyDisp},
+			{"opus", i18n.T("edit.field.opus"), v(w.opus)},
+			{"sonnet", i18n.T("edit.field.sonnet"), v(w.sonnet)},
+			{"haiku", i18n.T("edit.field.haiku"), v(w.haiku)},
+			{"fable", i18n.T("edit.field.fable"), v(w.fable)},
+			{"subagent", i18n.T("edit.field.subagent"), subagentLabel(w.subagent)},
+			{"effort", i18n.T("edit.field.effort"), v(w.effort)},
+			{"disableTraffic", i18n.T("edit.field.disableTraffic"), v(w.disableTraffic)},
 		}
+		labelW := 0
+		for _, f := range fieldRows {
+			if w := display.Width(f.label); w > labelW {
+				labelW = w
+			}
+		}
+		type row struct{ action, label string }
+		rows := make([]row, 0, len(fieldRows)+5)
+		for _, f := range fieldRows {
+			rows = append(rows, row{f.action, display.Pad(f.label, labelW) + ": " + f.value})
+		}
+		rows = append(rows,
+			row{"sep", ""},
+			row{"toggle", toggleLabel(showSecret)},
+			row{"sep", ""},
+			row{"save", i18n.T("edit.save")},
+			row{"discard", i18n.T("edit.discard")},
+		)
 		items := make([]string, len(rows))
 		for i, r := range rows {
 			items[i] = r.label
