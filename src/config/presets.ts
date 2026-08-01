@@ -25,6 +25,7 @@ export const BUILTIN_PRESETS: Preset[] = [
     effort: 'max',
     urls: [{ label: 'Anthropic 兼容', url: 'https://api.deepseek.com/anthropic' }],
     models: { opus: 'deepseek-v4-pro', sonnet: 'deepseek-v4-pro', haiku: 'deepseek-v4-flash' },
+    modelsApi: 'https://api.deepseek.com/models', // Anthropic 兼容端点未实现 /v1/models，模型列表在 OpenAI 风格端点
     models1m: ['deepseek-v4-pro'],
   },
   {
@@ -45,8 +46,11 @@ export const BUILTIN_PRESETS: Preset[] = [
       { label: 'TokenPlan', url: 'https://token-plan-cn.xiaomimimo.com/anthropic' },
     ],
     models: { opus: 'mimo-v2.5-pro', sonnet: 'mimo-v2.5-pro', haiku: 'mimo-v2.5-pro' },
-    // MiMo 的 models 端点是 OpenAI 风格 /v1/models（不带 /anthropic 前缀），必须显式给
-    modelsApi: 'https://api.xiaomimimo.com/v1/models',
+    // MiMo 的 models 端点是 OpenAI 风格 /v1/models（不带 /anthropic 前缀），按 base 前缀匹配各自端点
+    modelsApiMap: {
+      'https://api.xiaomimimo.com/anthropic': 'https://api.xiaomimimo.com/v1/models',
+      'https://token-plan-cn.xiaomimimo.com/anthropic': 'https://token-plan-cn.xiaomimimo.com/v1/models',
+    },
     models1m: ['mimo-v2.5-pro'],
   },
   {
@@ -96,6 +100,13 @@ function normalizePreset(raw: unknown): Preset | undefined {
   const env = normalizeEnv(p.env);
   if (env) preset.env = env;
   if (typeof p.models_api === 'string' && p.models_api.trim()) preset.modelsApi = p.models_api.trim();
+  if (p.models_api_map && typeof p.models_api_map === 'object') {
+    const map: Record<string, string> = {};
+    for (const [k, v] of Object.entries(p.models_api_map as Record<string, unknown>)) {
+      if (typeof v === 'string' && v.trim()) map[k.trim()] = v.trim();
+    }
+    if (Object.keys(map).length > 0) preset.modelsApiMap = map;
+  }
   if (Array.isArray(p.models_1m)) {
     const list = p.models_1m.map(asString).map((s) => s.trim()).filter(Boolean);
     if (list.length > 0) preset.models1m = list;

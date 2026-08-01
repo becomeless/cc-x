@@ -177,7 +177,6 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 | haiku → 模型 | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
 | fable → 模型 | `ANTHROPIC_DEFAULT_FABLE_MODEL` | 最强档（如 Fable 5）；供应商没这档就留空 |
 | 子代理 → 模型 | `CLAUDE_CODE_SUBAGENT_MODEL` | 子代理/agent teams 用模型；**留空=官方默认（继承主模型）**。想省钱可填 `haiku`（别名，跟随本配置的 haiku 档）或具体模型名 |
-| ↻ 获取模型列表 | — | 从供应商 API 拉取可用模型，选中后可选 `[1m]` 后缀再应用到档位；失败回退手敲 |
 | effort 思考档 | `CLAUDE_CODE_EFFORT_LEVEL` | `low` ~ `max`；`auto`=模型默认；留空=不设。第三方不一定生效 |
 | 禁用非核心流量 | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1`=禁用 Claude Code 非核心流量；留空=不设。GLM 预置为 `1` |
 
@@ -200,7 +199,7 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 | 小米MiMo | `https://api.xiaomimimo.com/anthropic` | `mimo-v2.5-pro` | `mimo-v2.5-pro` | — | — |
 
 > 模型名随各家更新而变，以供应商官方接入文档为准。小米有按量付费和 TokenPlan 两个地址，选供应商时会让你挑。
-> 预置的「获取模型列表」支持 1M 的模型（如 `deepseek-v4-pro`、`glm-5.2`、`mimo-v2.5-pro`）会标 `[1M]`，选中后可自动附 `[1m]` 后缀，无需手敲。
+> 四个模型档位行（opus/sonnet/haiku/fable）编辑时可选「从模型列表选择」——从供应商 API 拉取实际可用模型，支持 1M 的模型（如 `deepseek-v4-pro`、`glm-5.2`、`mimo-v2.5-pro`）标 `[1M]` 并自动附 `[1m]` 后缀，无需手敲；失败回退手动输入。
 
 ### 进阶
 

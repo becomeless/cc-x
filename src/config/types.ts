@@ -74,6 +74,8 @@ export interface Preset {
   env?: PresetEnv;
   /** 模型列表端点；缺省推导 `{base}/v1/models`（MiMo 路径不同需显式）。 */
   modelsApi?: string;
+  /** 按 BASE_URL 前缀匹配的模型列表端点（多地址供应商：按量/TokenPlan 各自端点）。 */
+  modelsApiMap?: Record<string, string>;
   /** 支持 1M 上下文的模型 ID 前缀表（`[1m]` 后缀默认开关）。 */
   models1m?: string[];
 }

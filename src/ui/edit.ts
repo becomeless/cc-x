@@ -38,64 +38,105 @@ function findPreset(catalog: Preset[], name: string): Preset | undefined {
   return catalog.find((p) => p.name === name);
 }
 
-/**
- * 拉取模型列表并应用到档位（失败/取消都安静回表单，不打断编辑）。对齐 Go 版 doFetchModels。
- * subagent 是省钱档，不参与「全部」。
- */
-async function doFetchModels(W: WorkCopy, catalog: Preset[]): Promise<void> {
-  if (W.base.trim() === '' || W.token.trim() === '') {
-    console.log(`  ${T('models.needBaseKey')}`);
-    return;
+/** 子代理行为空时显示「默认」（官方默认=继承主模型），不显示 (空)。 */
+function subagentLabel(v: string): string {
+  return v.trim() === '' ? T('edit.default') : v;
+}
+
+/** 按 BASE_URL 前缀在目录里找供应商；配置名与预设名不同（如「DeepSeek 2」）也能命中。 */
+function findPresetByBase(catalog: Preset[], baseUrl: string): Preset | undefined {
+  for (const p of catalog) {
+    for (const u of p.urls) {
+      if (u.url !== '' && baseUrl.startsWith(u.url)) return p;
+    }
+    if (p.modelsApiMap) {
+      for (const k of Object.keys(p.modelsApiMap)) {
+        if (baseUrl.startsWith(k)) return p;
+      }
+    }
   }
-  const pp = findPreset(catalog, W.name);
+  return undefined;
+}
+
+/** 定位当前表单的供应商预设：先按 base URL（同名不同配置也能命中），再按配置名兜底。 */
+function catalogPreset(catalog: Preset[], W: WorkCopy): Preset | undefined {
+  return findPresetByBase(catalog, W.base) ?? findPreset(catalog, W.name);
+}
+
+/** 解析模型列表端点：models_api_map 按 base 前缀匹配 > models_api > undefined（推导）。 */
+function resolveModelsEndpoint(pp: Preset | undefined, baseUrl: string): string | undefined {
+  if (!pp) return undefined;
+  if (pp.modelsApiMap) {
+    for (const [base, ep] of Object.entries(pp.modelsApiMap)) {
+      if (baseUrl.startsWith(base)) return ep;
+    }
+  }
+  return pp.modelsApi;
+}
+
+/** 构建模型列表菜单条目与 1M 标记（命中供应商 1M 表的标 [1M]）。对齐 Go 版 buildModelItems。 */
+function buildModelItems(models: ModelInfo[], pp: Preset | undefined): { items: string[]; is1M: boolean[] } {
+  const is1M = models.map((m) => supports1M(pp, m.id));
+  const items = models.map((m, i) => (is1M[i] ? `${m.id}  [1M]` : m.id));
+  return { items, is1M };
+}
+
+/** 从已拉取的模型列表选一个；命中 1M 表自动附加 [1m] 后缀（想用 200K 可在表单行手动删）。取消返回 null。 */
+async function pickFromList(
+  models: ModelInfo[],
+  items: string[],
+  is1M: boolean[],
+  title: string,
+  hint: string,
+): Promise<string | null> {
+  const sel = await selectMenu({ title, items, start: 0, hint, noNumber: true });
+  if (sel < 0) return null;
+  const picked = models[sel];
+  if (!picked) return null;
+  let model = picked.id;
+  if (is1M[sel]) {
+    model += '[1m]';
+  }
+  return model;
+}
+
+/**
+ * 从供应商 API 拉取模型列表并让用户选一个。返回选中模型 ID；用户取消返回 null；失败 throw
+ * （由表单 Status 展示，错误不再被清屏吞掉）。
+ */
+async function fetchAndPickModel(W: WorkCopy, catalog: Preset[], title: string): Promise<string | null> {
+  if (W.base.trim() === '' || W.token.trim() === '') {
+    throw new Error(T('models.needBaseKey'));
+  }
+  const pp = catalogPreset(catalog, W);
   console.log(`  ${T('models.fetching')}`);
   let models: ModelInfo[];
   try {
-    models = await fetchModels(W.base, W.token, pp?.modelsApi);
+    models = await fetchModels(W.base, W.token, resolveModelsEndpoint(pp, W.base));
   } catch (err) {
-    console.log(`  ${T('models.fail', err instanceof Error ? err.message : String(err))}`);
-    return;
+    throw err instanceof Error ? err : new Error(String(err));
   }
-  const is1M = models.map((m) => supports1M(pp, m.id));
-  const items = models.map((m, i) => (is1M[i] ? `${m.id}  [1M]` : m.id));
-  const sel = await selectMenu({ title: T('models.title'), items, start: 0, hint: T('models.hint'), noNumber: true });
-  if (sel < 0) return;
-  const picked = models[sel];
-  if (!picked) return;
-  let model = picked.id;
-  if (is1M[sel]) {
-    // 命中 1M 表：让用户选 1M 还是 200K（默认推荐 1M，不用手敲 [1m]）。
-    const ctxItems = [`${model}[1m]  ${T('models.ctx1m')}`, `${model}  ${T('models.ctx200k')}`];
-    const csel = await selectMenu({ title: T('models.ctxTitle'), items: ctxItems, start: 0, hint: T('models.ctxHint'), noNumber: true });
-    if (csel < 0) return;
-    if (csel === 0) model += '[1m]';
+  const { items, is1M } = buildModelItems(models, pp);
+  return pickFromList(models, items, is1M, title, T('models.hint'));
+}
+
+/** 档位行的编辑入口：手动输入 / 从模型列表选择。失败 throw（由表单 Status 展示）。 */
+async function pickSlotModel(
+  W: WorkCopy,
+  catalog: Preset[],
+  label: string,
+  current: string,
+): Promise<{ changed: boolean; value: string }> {
+  const cur = current === '' ? T('empty.paren') : current;
+  const opts = [T('models.pickManual'), T('models.pickFromList')];
+  const sel = await selectMenu({ title: `${label}（当前：${cur}）`, items: opts, start: 0, hint: T('pick.hint'), noNumber: true });
+  if (sel < 0) return { changed: false, value: current };
+  if (sel === 0) {
+    return readValue(label, current);
   }
-  const slotItems = [
-    `${T('edit.field.opus')}: ${model}`,
-    `${T('edit.field.sonnet')}: ${model}`,
-    `${T('edit.field.haiku')}: ${model}`,
-    `${T('edit.field.fable')}: ${model}`,
-    T('models.applyAll'),
-  ];
-  const asel = await selectMenu({ title: T('models.applyTitle'), items: slotItems, start: 0, hint: T('models.applyHint'), noNumber: true });
-  if (asel < 0) return;
-  switch (asel) {
-    case 0:
-      W.opus = model;
-      break;
-    case 1:
-      W.sonnet = model;
-      break;
-    case 2:
-      W.haiku = model;
-      break;
-    case 3:
-      W.fable = model;
-      break;
-    default:
-      W.opus = W.sonnet = W.haiku = W.fable = model;
-      break;
-  }
+  const model = await fetchAndPickModel(W, catalog, T('models.pickTitle'));
+  if (model === null) return { changed: false, value: current };
+  return { changed: true, value: model };
 }
 
 function fromProvider(p: Provider): WorkCopy {
@@ -124,6 +165,7 @@ function fromProvider(p: Provider): WorkCopy {
 export async function editForm(prov: Provider, store: Store, catalog: Preset[], focusKey = false): Promise<boolean> {
   const W = fromProvider(prov);
   let showSecret = false;
+  let status = ''; // 表单顶部绿色提示条：最近一次模型操作的结果/错误（清屏不会吞掉它）
   // rows 布局固定：provider,note,base,auth,key,…（密钥行索引为 4）。
   let start = focusKey ? 4 : 0;
 
@@ -140,8 +182,7 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
       { action: 'sonnet', label: `${T('edit.field.sonnet')}: ${v(W.sonnet)}` },
       { action: 'haiku', label: `${T('edit.field.haiku')}: ${v(W.haiku)}` },
       { action: 'fable', label: `${T('edit.field.fable')}: ${v(W.fable)}` },
-      { action: 'subagent', label: `${T('edit.field.subagent')}: ${v(W.subagent)}` },
-      { action: 'models', label: T('edit.action.models') },
+      { action: 'subagent', label: `${T('edit.field.subagent')}: ${subagentLabel(W.subagent)}` },
       { action: 'effort', label: `${T('edit.field.effort')}: ${v(W.effort)}` },
       { action: 'disableTraffic', label: `${T('edit.field.disableTraffic')}: ${v(W.disableTraffic)}` },
       { action: 'sep', label: '' },
@@ -151,7 +192,7 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
       { action: 'discard', label: T('edit.discard') },
     ];
 
-    const sel = await selectMenu({ title: T('edit.title'), items: rows.map((r) => r.label), start, hint: T('edit.hint'), noNumber: true });
+    const sel = await selectMenu({ title: T('edit.title'), items: rows.map((r) => r.label), start, hint: T('edit.hint'), status, noNumber: true });
     if (sel < 0) return false; // Esc / q = 放弃
     start = sel;
 
@@ -194,23 +235,51 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
         break;
       }
       case 'opus': {
-        const r = await readValue(T('edit.field.opus').trim(), W.opus);
-        if (r.changed) W.opus = r.value;
+        try {
+          const r = await pickSlotModel(W, catalog, T('edit.field.opus').trim(), W.opus);
+          if (r.changed) {
+            W.opus = r.value;
+            status = '';
+          }
+        } catch (err) {
+          status = T('models.fail', err instanceof Error ? err.message : String(err));
+        }
         break;
       }
       case 'sonnet': {
-        const r = await readValue(T('edit.field.sonnet').trim(), W.sonnet);
-        if (r.changed) W.sonnet = r.value;
+        try {
+          const r = await pickSlotModel(W, catalog, T('edit.field.sonnet').trim(), W.sonnet);
+          if (r.changed) {
+            W.sonnet = r.value;
+            status = '';
+          }
+        } catch (err) {
+          status = T('models.fail', err instanceof Error ? err.message : String(err));
+        }
         break;
       }
       case 'haiku': {
-        const r = await readValue(T('edit.field.haiku').trim(), W.haiku);
-        if (r.changed) W.haiku = r.value;
+        try {
+          const r = await pickSlotModel(W, catalog, T('edit.field.haiku').trim(), W.haiku);
+          if (r.changed) {
+            W.haiku = r.value;
+            status = '';
+          }
+        } catch (err) {
+          status = T('models.fail', err instanceof Error ? err.message : String(err));
+        }
         break;
       }
       case 'fable': {
-        const r = await readValue(T('edit.field.fable').trim(), W.fable);
-        if (r.changed) W.fable = r.value;
+        try {
+          const r = await pickSlotModel(W, catalog, T('edit.field.fable').trim(), W.fable);
+          if (r.changed) {
+            W.fable = r.value;
+            status = '';
+          }
+        } catch (err) {
+          status = T('models.fail', err instanceof Error ? err.message : String(err));
+        }
         break;
       }
       case 'subagent': {
@@ -218,9 +287,6 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
         if (r.changed) W.subagent = r.value;
         break;
       }
-      case 'models':
-        await doFetchModels(W, catalog);
-        break;
       case 'effort':
         W.effort = await pickEffort(W.effort);
         break;

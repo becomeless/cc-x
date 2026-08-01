@@ -31,7 +31,7 @@ export async function fetchModels(baseUrl: string, apiKey: string, endpoint?: st
   });
   const body = await res.text();
   if (!res.ok) {
-    throw new Error(`HTTP ${res.status}: ${extractErrMsg(body)}`);
+    throw new Error(`HTTP ${res.status}: ${extractErrMsg(body)}（${url}）`);
   }
   return parseModels(body);
 }

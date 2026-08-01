@@ -1,6 +1,7 @@
 package tui
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -45,6 +46,14 @@ func toggleLabel(show bool) string {
 	return i18n.T("edit.toggleSecretShow")
 }
 
+// subagentLabel 子代理行为空时显示「默认」（官方默认=继承主模型），不显示 (空)。
+func subagentLabel(v string) string {
+	if strings.TrimSpace(v) == "" {
+		return i18n.T("edit.default")
+	}
+	return v
+}
+
 // findPreset 按显示名在目录里找供应商；自定义名找不到返回 nil（仍可手敲）。
 func findPreset(catalog []presets.Preset, name string) *presets.Preset {
 	for i := range catalog {
@@ -55,77 +64,123 @@ func findPreset(catalog []presets.Preset, name string) *presets.Preset {
 	return nil
 }
 
-// doFetchModels 拉取模型列表并应用到档位（失败/取消都安静回表单，不打断编辑）。
-func doFetchModels(t *Terminal, w *workCopy, catalog []presets.Preset) {
-	if strings.TrimSpace(w.base) == "" || strings.TrimSpace(w.token) == "" {
-		fmt.Printf("  %s\n", i18n.T("models.needBaseKey"))
-		return
+// findPresetByBase 按 BASE_URL 前缀在目录里找供应商。
+// 配置名与预设名不同（如「DeepSeek 2」）也能命中：端点/1M 表是供应商的属性，跟着 base 走才对。
+func findPresetByBase(catalog []presets.Preset, baseURL string) *presets.Preset {
+	for i := range catalog {
+		for _, u := range catalog[i].URLs {
+			if u.URL != "" && strings.HasPrefix(baseURL, u.URL) {
+				return &catalog[i]
+			}
+		}
+		for k := range catalog[i].ModelsAPIMap {
+			if strings.HasPrefix(baseURL, k) {
+				return &catalog[i]
+			}
+		}
 	}
-	pp := findPreset(catalog, w.name)
+	return nil
+}
+
+// resolveModelsEndpoint 解析模型列表端点：models_api_map 按 base 前缀匹配 > models_api > 空（推导）。
+func resolveModelsEndpoint(pp *presets.Preset, baseURL string) string {
+	if pp == nil {
+		return ""
+	}
+	if len(pp.ModelsAPIMap) > 0 {
+		for base, ep := range pp.ModelsAPIMap {
+			if strings.HasPrefix(baseURL, base) {
+				return ep
+			}
+		}
+	}
+	return pp.ModelsAPI
+}
+
+// catalogPreset 定位当前表单的供应商预设：先按 base URL（同名不同配置也能命中），再按配置名兜底。
+func catalogPreset(catalog []presets.Preset, w *workCopy) *presets.Preset {
+	if pp := findPresetByBase(catalog, w.base); pp != nil {
+		return pp
+	}
+	return findPreset(catalog, w.name)
+}
+
+// buildModelItems 构建模型列表菜单条目与 1M 标记（命中供应商 1M 表的标 [1M]）。
+func buildModelItems(models []presets.ModelInfo, pp *presets.Preset) (items []string, is1M []bool) {
+	items = make([]string, 0, len(models))
+	is1M = make([]bool, len(models))
+	for i, m := range models {
+		if presets.Supports1M(pp, m.ID) {
+			items = append(items, m.ID+"  [1M]")
+			is1M[i] = true
+		} else {
+			items = append(items, m.ID)
+		}
+	}
+	return items, is1M
+}
+
+// pickFromList 从已拉取的模型列表选一个；命中 1M 表自动附加 [1m] 后缀（想用 200K 可在表单行手动删）。取消返回 false。
+func pickFromList(t *Terminal, models []presets.ModelInfo, items []string, is1M []bool, title, hint string) (string, bool) {
+	sel := SelectMenu(t, SelectOptions{Title: title, Items: items, Start: 0, Hint: hint, NoNumber: true})
+	if sel < 0 {
+		return "", false
+	}
+	model := models[sel].ID
+	if is1M[sel] {
+		model += "[1m]"
+	}
+	return model, true
+}
+
+// fetchAndPickModel 从供应商 API 拉取模型列表并让用户选一个。
+// 返回选中模型 ID；用户取消返回 ("", nil)；失败返回 ("", err)（由表单 Status 展示）。
+func fetchAndPickModel(t *Terminal, w *workCopy, catalog []presets.Preset, title string) (string, error) {
+	if strings.TrimSpace(w.base) == "" || strings.TrimSpace(w.token) == "" {
+		return "", errors.New(i18n.T("models.needBaseKey"))
+	}
+	pp := catalogPreset(catalog, w)
 	var endpoint string
 	if pp != nil {
-		endpoint = pp.ModelsAPI
+		endpoint = resolveModelsEndpoint(pp, w.base)
 	}
 	fmt.Printf("  %s\n", i18n.T("models.fetching"))
 	models, err := presets.FetchModels(w.base, w.token, endpoint)
 	if err != nil {
-		fmt.Printf("  %s\n", i18n.T("models.fail", err))
-		return
+		return "", err
 	}
-	items := make([]string, 0, len(models))
-	is1M := make(map[int]bool, len(models))
-	for i, m := range models {
-		label := m.ID
-		if presets.Supports1M(pp, m.ID) {
-			label += "  [1M]"
-			is1M[i] = true
-		}
-		items = append(items, label)
+	items, is1M := buildModelItems(models, pp)
+	model, ok := pickFromList(t, models, items, is1M, title, i18n.T("models.hint"))
+	if !ok {
+		return "", nil
 	}
-	sel := SelectMenu(t, SelectOptions{Title: i18n.T("models.title"), Items: items, Start: 0, Hint: i18n.T("models.hint"), NoNumber: true})
+	return model, nil
+}
+
+// pickSlotModel 档位行的编辑入口：手动输入 / 从模型列表选择。
+// 返回是否变更与新值；失败返回 err（由表单 Status 展示，错误不再被清屏吞掉）。
+func pickSlotModel(t *Terminal, w *workCopy, catalog []presets.Preset, label, current string) (bool, string, error) {
+	cur := current
+	if cur == "" {
+		cur = i18n.T("empty.paren")
+	}
+	opts := []string{i18n.T("models.pickManual"), i18n.T("models.pickFromList")}
+	sel := SelectMenu(t, SelectOptions{Title: fmt.Sprintf("%s（当前：%s）", label, cur), Items: opts, Start: 0, Hint: i18n.T("pick.hint"), NoNumber: true})
 	if sel < 0 {
-		return
+		return false, current, nil
 	}
-	model := models[sel].ID
-	if is1M[sel] {
-		// 命中 1M 表：让用户选 1M 还是 200K（默认推荐 1M，不用手敲 [1m]）。
-		ctxItems := []string{
-			model + "[1m]" + "  " + i18n.T("models.ctx1m"),
-			model + "  " + i18n.T("models.ctx200k"),
-		}
-		csel := SelectMenu(t, SelectOptions{Title: i18n.T("models.ctxTitle"), Items: ctxItems, Start: 0, Hint: i18n.T("models.ctxHint"), NoNumber: true})
-		if csel < 0 {
-			return
-		}
-		if csel == 0 {
-			model += "[1m]"
-		}
+	if sel == 0 {
+		ch, val := ReadValue(t, strings.TrimSpace(label), current, false)
+		return ch, val, nil
 	}
-	// 应用到档位（subagent 是省钱档，不参与「全部」）。
-	slots := []string{"opus", "sonnet", "haiku", "fable", "all"}
-	slotItems := []string{
-		i18n.T("edit.field.opus") + ": " + model,
-		i18n.T("edit.field.sonnet") + ": " + model,
-		i18n.T("edit.field.haiku") + ": " + model,
-		i18n.T("edit.field.fable") + ": " + model,
-		i18n.T("models.applyAll"),
+	model, err := fetchAndPickModel(t, w, catalog, i18n.T("models.pickTitle"))
+	if err != nil {
+		return false, current, err
 	}
-	asel := SelectMenu(t, SelectOptions{Title: i18n.T("models.applyTitle"), Items: slotItems, Start: 0, Hint: i18n.T("models.applyHint"), NoNumber: true})
-	if asel < 0 {
-		return
+	if model == "" {
+		return false, current, nil // 用户取消
 	}
-	switch slots[asel] {
-	case "opus":
-		w.opus = model
-	case "sonnet":
-		w.sonnet = model
-	case "haiku":
-		w.haiku = model
-	case "fable":
-		w.fable = model
-	default: // all
-		w.opus, w.sonnet, w.haiku, w.fable = model, model, model, model
-	}
+	return true, model, nil
 }
 
 // EditForm 编辑 prov（就地修改）；保存返回 true，放弃返回 false。对应 npm 版 editForm。
@@ -134,6 +189,7 @@ func doFetchModels(t *Terminal, w *workCopy, catalog []presets.Preset) {
 func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog []presets.Preset, focusKey bool) bool {
 	w := fromProvider(*prov)
 	showSecret := false
+	status := "" // 表单顶部绿色提示条：最近一次模型操作的结果/错误（SelectMenu 清屏不会吞掉它）
 	// rows 布局固定：provider,note,base,auth,key,…（密钥行索引为 4）。
 	const keyRowIndex = 4
 	start := 0
@@ -168,8 +224,7 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 			{"sonnet", i18n.T("edit.field.sonnet") + ": " + v(w.sonnet)},
 			{"haiku", i18n.T("edit.field.haiku") + ": " + v(w.haiku)},
 			{"fable", i18n.T("edit.field.fable") + ": " + v(w.fable)},
-			{"subagent", i18n.T("edit.field.subagent") + ": " + v(w.subagent)},
-			{"models", i18n.T("edit.action.models")},
+			{"subagent", i18n.T("edit.field.subagent") + ": " + subagentLabel(w.subagent)},
 			{"effort", i18n.T("edit.field.effort") + ": " + v(w.effort)},
 			{"disableTraffic", i18n.T("edit.field.disableTraffic") + ": " + v(w.disableTraffic)},
 			{"sep", ""},
@@ -183,7 +238,7 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 			items[i] = r.label
 		}
 
-		sel := SelectMenu(t, SelectOptions{Title: i18n.T("edit.title"), Items: items, Start: start, Hint: i18n.T("edit.hint"), NoNumber: true})
+		sel := SelectMenu(t, SelectOptions{Title: i18n.T("edit.title"), Items: items, Start: start, Hint: i18n.T("edit.hint"), Status: status, NoNumber: true})
 		if sel < 0 {
 			return false // Esc / q = 放弃
 		}
@@ -236,27 +291,37 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 				w.token = val
 			}
 		case "opus":
-			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.opus")), w.opus, false); ch {
+			if ch, val, err := pickSlotModel(t, &w, catalog, strings.TrimSpace(i18n.T("edit.field.opus")), w.opus); err != nil {
+				status = i18n.T("models.fail", err)
+			} else if ch {
 				w.opus = val
+				status = ""
 			}
 		case "sonnet":
-			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.sonnet")), w.sonnet, false); ch {
+			if ch, val, err := pickSlotModel(t, &w, catalog, strings.TrimSpace(i18n.T("edit.field.sonnet")), w.sonnet); err != nil {
+				status = i18n.T("models.fail", err)
+			} else if ch {
 				w.sonnet = val
+				status = ""
 			}
 		case "haiku":
-			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.haiku")), w.haiku, false); ch {
+			if ch, val, err := pickSlotModel(t, &w, catalog, strings.TrimSpace(i18n.T("edit.field.haiku")), w.haiku); err != nil {
+				status = i18n.T("models.fail", err)
+			} else if ch {
 				w.haiku = val
+				status = ""
 			}
 		case "fable":
-			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.fable")), w.fable, false); ch {
+			if ch, val, err := pickSlotModel(t, &w, catalog, strings.TrimSpace(i18n.T("edit.field.fable")), w.fable); err != nil {
+				status = i18n.T("models.fail", err)
+			} else if ch {
 				w.fable = val
+				status = ""
 			}
 		case "subagent":
 			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.subagent")), w.subagent, false); ch {
 				w.subagent = val
 			}
-		case "models":
-			doFetchModels(t, &w, catalog)
 		case "effort":
 			w.effort = PickEffort(t, w.effort)
 		case "disableTraffic":

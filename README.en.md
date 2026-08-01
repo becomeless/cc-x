@@ -200,7 +200,6 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 | haiku → model | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
 | fable → model | `ANTHROPIC_DEFAULT_FABLE_MODEL` | Top tier (e.g. Fable 5); leave empty if the provider has none |
 | subagent → model | `CLAUDE_CODE_SUBAGENT_MODEL` | Model for subagents/agent teams; **empty = official default (inherit main model)**. To save cost, fill `haiku` (alias, follows this profile's haiku tier) or a concrete model ID |
-| ↻ Fetch models | — | Pulls available models from the provider API; pick one, optionally attach `[1m]`, then apply to a tier. Falls back to manual input on failure |
 | effort level | `CLAUDE_CODE_EFFORT_LEVEL` | `low`–`max`; `auto` = model default; empty = unset. Third parties may not honor it |
 | Disable nonessential traffic | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1` disables nonessential Claude Code traffic; empty = unset. Zhipu GLM defaults to `1` |
 
@@ -225,8 +224,10 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 
 > Model names change as providers update. Xiaomi MiMo has both pay-as-you-go and TokenPlan
 > endpoints; you pick one when selecting the provider.
-> In "Fetch models", models known to support 1M context (e.g. `deepseek-v4-pro`, `glm-5.2`,
-> `mimo-v2.5-pro`) are marked `[1M]`; selecting one can auto-append the `[1m]` suffix — no typing.
+> Editing any model tier (opus/sonnet/haiku/fable) offers "Pick from model list" — pulls the
+> provider's actual models; models supporting 1M context (e.g. `deepseek-v4-pro`, `glm-5.2`,
+> `mimo-v2.5-pro`) are marked `[1M]` and get the `[1m]` suffix automatically — no typing.
+> Falls back to manual input on failure.
 
 ### Advanced
 

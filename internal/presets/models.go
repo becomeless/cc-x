@@ -65,7 +65,7 @@ func FetchModels(baseURL, apiKey, endpoint string) ([]ModelInfo, error) {
 		return nil, fmt.Errorf("读取响应失败: %w", err)
 	}
 	if resp.StatusCode >= 400 {
-		return nil, fmt.Errorf("HTTP %d: %s", resp.StatusCode, extractErrMsg(body))
+		return nil, fmt.Errorf("HTTP %d: %s（%s）", resp.StatusCode, extractErrMsg(body), endpoint)
 	}
 	return parseModels(body)
 }

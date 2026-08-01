@@ -7,6 +7,7 @@
       { "label": "Anthropic 兼容", "url": "https://api.deepseek.com/anthropic" }
     ],
     "models": { "opus": "deepseek-v4-pro", "sonnet": "deepseek-v4-pro", "haiku": "deepseek-v4-flash" },
+    "models_api": "https://api.deepseek.com/models",
     "models_1m": ["deepseek-v4-pro"]
   },
   {
@@ -29,7 +30,10 @@
       { "label": "TokenPlan", "url": "https://token-plan-cn.xiaomimimo.com/anthropic" }
     ],
     "models": { "opus": "mimo-v2.5-pro", "sonnet": "mimo-v2.5-pro", "haiku": "mimo-v2.5-pro" },
-    "models_api": "https://api.xiaomimimo.com/v1/models",
+    "models_api_map": {
+      "https://api.xiaomimimo.com/anthropic": "https://api.xiaomimimo.com/v1/models",
+      "https://token-plan-cn.xiaomimimo.com/anthropic": "https://token-plan-cn.xiaomimimo.com/v1/models"
+    },
     "models_1m": ["mimo-v2.5-pro"]
   },
   {

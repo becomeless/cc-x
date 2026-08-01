@@ -39,14 +39,15 @@ type Models struct {
 
 // Preset 是一个「供应商」目录条目。
 type Preset struct {
-	Name      string            `json:"name"`
-	Auth      string            `json:"auth"` // AUTH_TOKEN | API_KEY
-	URLs      []URL             `json:"urls"`
-	Models    Models            `json:"models"`
-	Effort    string            `json:"effort,omitempty"`
-	Env       map[string]string `json:"env,omitempty"`
-	ModelsAPI string            `json:"models_api,omitempty"` // 模型列表端点；缺省推导 {base}/v1/models（MiMo 路径不同需显式）
-	Models1M  []string          `json:"models_1m,omitempty"`  // 支持 1M 上下文的模型 ID 前缀表（[1m] 后缀默认开关）
+	Name         string            `json:"name"`
+	Auth         string            `json:"auth"` // AUTH_TOKEN | API_KEY
+	URLs         []URL             `json:"urls"`
+	Models       Models            `json:"models"`
+	Effort       string            `json:"effort,omitempty"`
+	Env          map[string]string `json:"env,omitempty"`
+	ModelsAPI    string            `json:"models_api,omitempty"`     // 模型列表端点；缺省推导 {base}/v1/models（MiMo 路径不同需显式）
+	ModelsAPIMap map[string]string `json:"models_api_map,omitempty"` // 按 BASE_URL 前缀匹配的模型列表端点（多地址供应商：按量/TokenPlan 各自端点）
+	Models1M     []string          `json:"models_1m,omitempty"`      // 支持 1M 上下文的模型 ID 前缀表（[1m] 后缀默认开关）
 }
 
 // BuiltinPresets 是内置兜底目录，镜像仓库根 presets.json（由 presets_test.go 对拍保证不漂）。
@@ -57,8 +58,9 @@ var BuiltinPresets = []Preset{
 		Auth:   AuthToken,
 		Effort: "max",
 		URLs:   []URL{{Label: "Anthropic 兼容", URL: "https://api.deepseek.com/anthropic"}},
-		Models:   Models{Opus: "deepseek-v4-pro", Sonnet: "deepseek-v4-pro", Haiku: "deepseek-v4-flash"},
-		Models1M: []string{"deepseek-v4-pro"},
+		Models:    Models{Opus: "deepseek-v4-pro", Sonnet: "deepseek-v4-pro", Haiku: "deepseek-v4-flash"},
+		ModelsAPI: "https://api.deepseek.com/models", // Anthropic 兼容端点未实现 /v1/models，模型列表在 OpenAI 风格端点
+		Models1M:  []string{"deepseek-v4-pro"},
 	},
 	{
 		Name:   "智谱GLM",
@@ -78,9 +80,12 @@ var BuiltinPresets = []Preset{
 			{Label: "TokenPlan", URL: "https://token-plan-cn.xiaomimimo.com/anthropic"},
 		},
 		Models: Models{Opus: "mimo-v2.5-pro", Sonnet: "mimo-v2.5-pro", Haiku: "mimo-v2.5-pro"},
-		// MiMo 的 models 端点是 OpenAI 风格 /v1/models（不带 /anthropic 前缀），必须显式给
-		ModelsAPI: "https://api.xiaomimimo.com/v1/models",
-		Models1M:  []string{"mimo-v2.5-pro"},
+		// MiMo 的 models 端点是 OpenAI 风格 /v1/models（不带 /anthropic 前缀），按 base 前缀匹配各自端点
+		ModelsAPIMap: map[string]string{
+			"https://api.xiaomimimo.com/anthropic":            "https://api.xiaomimimo.com/v1/models",
+			"https://token-plan-cn.xiaomimimo.com/anthropic": "https://token-plan-cn.xiaomimimo.com/v1/models",
+		},
+		Models1M: []string{"mimo-v2.5-pro"},
 	},
 	{
 		Name:   "官方Anthropic",
@@ -144,6 +149,17 @@ func normalizePreset(raw any) (Preset, bool) {
 		p.Effort = e
 	}
 	p.ModelsAPI = strings.TrimSpace(asString(m["models_api"]))
+	if mm, ok := m["models_api_map"].(map[string]any); ok && len(mm) > 0 {
+		p.ModelsAPIMap = map[string]string{}
+		for k, v := range mm {
+			if s := strings.TrimSpace(asString(v)); s != "" {
+				p.ModelsAPIMap[strings.TrimSpace(k)] = s
+			}
+		}
+		if len(p.ModelsAPIMap) == 0 {
+			p.ModelsAPIMap = nil
+		}
+	}
 	if arr, ok := m["models_1m"].([]any); ok {
 		for _, item := range arr {
 			if s := strings.TrimSpace(asString(item)); s != "" {
