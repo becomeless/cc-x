@@ -1,5 +1,11 @@
 # 更新日志
 
+## v0.4.18 — 2026-08-01
+
+- 修复：1M 支持表匹配大小写不敏感——API 返回 `GLM-5.2`（大写）也能命中表里的 `glm-5.2`，正确标 `[1M]` 并自动附 `[1m]` 后缀（Go / TypeScript 双版本对齐）
+- GLM 预设显式配置模型列表端点 `open.bigmodel.cn/api/anthropic/v1/models`（真实 key 实测有效，防止推导路由变化）
+- 新增：`findPresetByBase` / `catalogPreset` / `resolveModelsEndpoint` 单测（按 BASE_URL 匹配预设、端点三层解析）
+
 ## v0.4.16 — 2026-08-01
 
 - 新增：编辑表单档位行（opus/sonnet/haiku/fable）支持「从模型列表选择」——从供应商 API 拉取实际可用模型（兼容 Anthropic / OpenAI 两种响应格式，防御「HTTP 200 + 业务错误体」），支持 1M 的模型标 `[1M]` 并自动附 `[1m]` 后缀，一步填入；失败明确报错并回退手动输入（Go / TypeScript 双版本对齐）
