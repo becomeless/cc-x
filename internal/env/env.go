@@ -9,7 +9,7 @@ import (
 	"github.com/becomeless/cc-x/internal/config"
 )
 
-// ManagedVals 是受管键 -> 值；空字符串表示「清除该键」。始终包含全部 9 个受管键。
+// ManagedVals 是受管键 -> 值；空字符串表示「清除该键」。始终包含全部 10 个受管键。
 type ManagedVals map[string]string
 
 // ComputeManagedVals 给定配置，算出每个受管键的「设值或清除」。
@@ -28,7 +28,7 @@ func ComputeManagedVals(p config.Provider) ManagedVals {
 	return vals
 }
 
-// ApplyManaged 把目标配置的受管变量套到当前进程（有值 Setenv、没值 Unsetenv，只动这 9 个）。
+// ApplyManaged 把目标配置的受管变量套到当前进程（有值 Setenv、没值 Unsetenv，只动这 10 个）。
 // 本次启用用：之后 exec 出的 claude 子进程会继承当前进程环境。对齐 npm 版 applyManagedEnv。
 func ApplyManaged(p config.Provider) {
 	m := config.GetProviderEnvMap(p)
