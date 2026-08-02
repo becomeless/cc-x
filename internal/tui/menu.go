@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/becomeless/cc-x/internal/check"
+	"github.com/becomeless/cc-x/internal/claudecfg"
 	"github.com/becomeless/cc-x/internal/config"
 	"github.com/becomeless/cc-x/internal/defaults"
 	"github.com/becomeless/cc-x/internal/display"
@@ -16,15 +17,17 @@ import (
 	"github.com/becomeless/cc-x/internal/update"
 )
 
-// OpenMenu 一级 · 主菜单。布局：[profiles…] ” 新增 语言 ” 退出。对应 npm 版 openMenu。
+// OpenMenu 一级 · 主菜单。布局：[profiles…] ” 新增 语言 更新检查 免登录 ” 退出。对应 npm 版 openMenu。
 func OpenMenu(t *Terminal, paths config.StorePaths, store *config.Store, scope defaults.Scope, version string, catalog []presets.Preset) {
 	sel := 0
 	refreshed := false
 	flash := ""
 	warnFlash := ""
+	// 更新横幅（仅 notify 模式）：缓存文件只在首轮读一次（每按键都读是浪费），存进来循环内复用。
+	var bannerLatest string
+	var bannerOK bool
 	for {
 		n := len(store.Providers)
-		// 更新检查（仅 notify 模式）：首轮触发一次后台刷新；横幅永远读缓存（瞬时、不阻塞）。
 		notices := []string{}
 		if needsFirstRunHint(store) {
 			notices = append(notices, i18n.T("menu.firstRunHint"))
@@ -36,9 +39,10 @@ func OpenMenu(t *Terminal, paths config.StorePaths, store *config.Store, scope d
 			if !refreshed {
 				update.MaybeRefresh(paths.Dir)
 				refreshed = true
+				bannerLatest, bannerOK = update.Banner(paths.Dir, version)
 			}
-			if latest, ok := update.Banner(paths.Dir, version); ok {
-				notices = append(notices, i18n.T("menu.updateAvailable", latest, update.UpgradeCommand()))
+			if bannerOK {
+				notices = append(notices, i18n.T("menu.updateAvailable", bannerLatest, update.UpgradeCommand()))
 			}
 		}
 		updLabel := i18n.T("menu.updateOff")
@@ -47,7 +51,7 @@ func OpenMenu(t *Terminal, paths config.StorePaths, store *config.Store, scope d
 		}
 		buildItems := func() []string {
 			items := append([]string{}, ProfileRows(store.Providers, store.Current)...)
-			return append(items, "", i18n.T("menu.newProfile"), i18n.T("menu.language"), updLabel, "", i18n.T("menu.exit"))
+			return append(items, "", i18n.T("menu.newProfile"), i18n.T("menu.language"), updLabel, i18n.T("menu.noLogin"), "", i18n.T("menu.exit"))
 		}
 		moveWarn := ""
 		onMove := func(from, to int) []string {
@@ -66,7 +70,7 @@ func OpenMenu(t *Terminal, paths config.StorePaths, store *config.Store, scope d
 			Notice:       strings.Join(notices, "\n"),
 			Status:       flash,
 			Items:        buildItems(),
-			Colors:       map[int]Color{n + 1: ColorYellow, n + 2: ColorDim, n + 3: ColorDim},
+			Colors:       map[int]Color{n + 1: ColorYellow, n + 2: ColorDim, n + 3: ColorDim, n + 4: ColorYellow},
 			Start:        sel,
 			MovableCount: n,
 			OnMove:       onMove,
@@ -104,7 +108,7 @@ func OpenMenu(t *Terminal, paths config.StorePaths, store *config.Store, scope d
 		}
 
 		switch {
-		case sel < 0 || sel == n+5: // 退出 / Esc / q
+		case sel < 0 || sel == n+6: // 退出 / Esc / q
 			return
 		case sel == n+1: // 新增配置
 			prov := config.Provider{Env: map[string]string{}}
@@ -128,6 +132,12 @@ func OpenMenu(t *Terminal, paths config.StorePaths, store *config.Store, scope d
 				store.Update = update.ModeNotify
 			}
 			warnFlash = saveWarning(paths, store)
+		case sel == n+4: // 一键免登录（铁律唯一豁免：仅写顶层 hasCompletedOnboarding=true，字节级最小修改）
+			if err := claudecfg.MarkOnboardingDone(); err != nil {
+				warnFlash = i18n.T("menu.noLoginError", err)
+			} else {
+				flash = i18n.T("menu.noLoginDone")
+			}
 		case sel < n:
 			p := &store.Providers[sel]
 			if !config.IsOfficial(*p) && config.GetProviderState(*p).Key == config.KeyNone {

@@ -235,9 +235,11 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
   with ` 2`, ` 3`… Use **Note** to tell them apart, shown as "Provider — Note".
 - **Custom providers**: `presets.json` is the provider catalog; add a JSON entry to offer a new
   one, no code change. Drop `~/.cc-mini/presets.json` to override the shipped catalog.
-- **First-launch login prompt**: before launching a third-party profile, CC-X reads
-  `hasCompletedOnboarding` from `~/.claude.json` and prints a non-blocking hint when onboarding
-  is unfinished. It does not write the file; dismiss or skip the Claude Code prompt if it appears.
+- **First-launch login prompt**: the "Skip login" entry in the main menu writes
+  `hasCompletedOnboarding: true` in `~/.claude.json` — the officially recommended way to bypass
+  the login wizard (same approach as the MiMo integration guide). The next Claude Code launch
+  skips onboarding. This is the single exception to CC-X's no-write rule: only that one
+  top-level boolean field is touched, byte-level, and an invalid file is refused untouched.
 - **Update check**: toggle to "notify" in the menu — a yellow one-liner appears atop the menu
   when a new release is out. At most one check per day; never auto-upgrades.
 
@@ -251,8 +253,9 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
   - Windows → registry `HKCU\Environment` + one change broadcast
   - Unix → `# >>> xx >>>` … `# <<< xx <<<` marker block in shell startup file (idempotent rewrite, chosen by `$SHELL`)
   - Same semantics either way: **only affects new terminals**; switching to "Official" clears all managed vars
-- **No Claude Code config file is ever modified.** Before third-party launches, CC-X only reads
-  the onboarding field in `~/.claude.json` to decide whether to print a hint.
+- **No Claude Code config file is ever modified** — except the one explicit, user-initiated
+  exception: the "Skip login" menu entry writes the single `hasCompletedOnboarding` top-level
+  boolean in `~/.claude.json` (byte-level minimal edit; invalid JSON is refused).
 
 CC-X only touches these 10 "managed" variables (and clears the ones a target profile doesn't use):
 `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `ANTHROPIC_DEFAULT_OPUS_MODEL`,

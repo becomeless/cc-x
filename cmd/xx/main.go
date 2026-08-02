@@ -10,7 +10,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/becomeless/cc-x/internal/claudecfg"
 	"github.com/becomeless/cc-x/internal/config"
 	"github.com/becomeless/cc-x/internal/defaults"
 	"github.com/becomeless/cc-x/internal/env"
@@ -227,11 +226,9 @@ func runDefault(paths config.StorePaths, store *config.Store, p *config.Provider
 }
 
 // launchSession：本次启用 —— 提示 + banner + 套环境启动 claude，阻塞至其退出。对齐 npm 版 launchSession/sessionLaunch。
+// Unix/macOS：env 套好后直接 syscall.Exec 进程替换（常驻归零、退出码透传）；Windows 无 exec-replace，保持子进程等待。
 func launchSession(p config.Provider) int {
 	warnIfNoKey(p)
-	if !config.IsOfficial(p) && !claudecfg.HasCompletedOnboarding() {
-		fmt.Printf("  %s\n", i18n.T("session.onboardingHint"))
-	}
 	fmt.Println("")
 	fmt.Printf("  %s\n", i18n.T("session.launch", i18n.ProviderDisplayName(p)))
 	fmt.Printf("  %s\n", i18n.T("session.starting"))
@@ -243,6 +240,14 @@ func launchSession(p config.Provider) int {
 		return 1
 	}
 	env.ApplyManaged(p)
+	if runtime.GOOS != "windows" {
+		// banner 已打印（os.Stdout 直写无缓冲）；exec 成功则永不返回，退出码由 claude 本体透传。
+		if err := launch.LaunchSessionExec(bin); err != nil {
+			fmt.Fprintf(os.Stderr, "  %s\n", err.Error())
+			return 1
+		}
+		return 0 // 不可达：exec 成功则进程已被替换
+	}
 	code, err := launch.LaunchSession(bin)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "  %s\n", err.Error())

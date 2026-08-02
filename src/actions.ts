@@ -1,8 +1,7 @@
 /**
  * 共享动作：本次启用（CLI 路径与菜单都用，避免 index ↔ menus 循环依赖）。
  */
-import { hasCompletedOnboarding } from './claudecfg.js';
-import { isOfficial, getProviderState, type Provider } from './config/store.js';
+import { getProviderState, type Provider } from './config/store.js';
 import { sessionLaunch } from './env/session.js';
 import { providerDisplayName, T } from './i18n/index.js';
 
@@ -16,9 +15,6 @@ export function warnIfNoKey(p: Provider): void {
 /** 本次启用：缺密钥提示 + banner + 套环境启动 claude，阻塞至其退出。 */
 export function launchSession(p: Provider): void {
   warnIfNoKey(p);
-  if (!isOfficial(p) && !hasCompletedOnboarding()) {
-    console.log(`  ${T('session.onboardingHint')}`);
-  }
   console.log('');
   console.log(`  ${T('session.launch', providerDisplayName(p))}`);
   console.log(`  ${T('session.starting')}`);

@@ -64,6 +64,9 @@ var messages = map[string]msg{
 	"menu.updateNotify":    {zh: "更新检查：提醒", en: "Update check: notify"},
 	"menu.updateAvailable": {zh: "有新版本 {0} · 升级：{1}", en: "New version {0} · upgrade: {1}"},
 	"menu.firstRunHint":    {zh: "首次配置：① 选供应商 → ② 填密钥 → ③ 本次启用", en: "First setup: 1. pick a provider -> 2. paste key -> 3. use this session"},
+	"menu.noLogin":         {zh: "一键免登录", en: "Skip login"},
+	"menu.noLoginDone":     {zh: "免登录标记已写入：下次启动 Claude Code 不再弹登录引导", en: "No-login marker written: Claude Code will not show the login prompt on next launch"},
+	"menu.noLoginError":    {zh: "免登录标记写入失败：{0}", en: "Failed to write no-login marker: {0}"},
 
 	// —— 动作菜单 ——
 	"action.titlePrefix": {zh: "配置：", en: "Profile: "},
@@ -174,10 +177,6 @@ var messages = map[string]msg{
 	},
 	"session.noClaude":     {zh: "未找到 claude 命令，请确认它在 PATH 中。", en: "claude not found on PATH."},
 	"session.noClaudeHint": {zh: "下一步：安装 Claude Code 后新开终端；npm 用户可运行 `npm install -g @anthropic-ai/claude-code`。", en: "Next: install Claude Code and open a new terminal; npm users can run `npm install -g @anthropic-ai/claude-code`."},
-	"session.onboardingHint": {
-		zh: "提示：若 Claude Code 首次启动出现登录引导，选择跳过或关闭引导后第三方 API 会自动生效。",
-		en: "Tip: if Claude Code shows a login prompt on first launch, dismiss or skip it — the third-party API will take effect regardless.",
-	},
 
 	// —— 配置自检（只读网络探测）——
 	"check.noUrl":    {zh: "官方登录态 / 未设置 API 地址，无需自检。", en: "Official login / no API URL set; nothing to probe."},

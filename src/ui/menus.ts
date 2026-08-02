@@ -6,6 +6,7 @@
  * 编辑表单见 ui/edit.ts（含密钥明文切换）。
  */
 import { launchSession } from '../actions.js';
+import { markOnboardingDone } from '../claudecfg.js';
 import { checkProfile } from '../check.js';
 import { getProviderState, isOfficial, reconcileCurrent, saveStore, type Provider, type Store, type StorePaths } from '../config/store.js';
 import type { Preset } from '../config/types.js';
@@ -18,7 +19,7 @@ import { editForm } from './edit.js';
 import { noteSuffix, stateLabel } from './format.js';
 import { confirmKey, selectMenu } from './select.js';
 
-/** 一级 · 主菜单。布局：[profiles…] '' 新增 语言 '' 退出。 */
+/** 一级 · 主菜单。布局：[profiles…] '' 新增 语言 更新检查 免登录 '' 退出。 */
 export async function openMenu(
   paths: StorePaths,
   store: Store,
@@ -30,9 +31,10 @@ export async function openMenu(
   let refreshed = false;
   let flash: string | undefined;
   let warnFlash: string | undefined;
+  // 更新横幅（仅 notify 模式）：缓存文件只在首轮读一次（每按键都读是浪费），存进来循环内复用。
+  let bannerLatest: string | undefined;
   for (;;) {
     const n = store.providers.length;
-    // 更新检查（仅 notify 模式）：首轮触发一次后台刷新；横幅永远读缓存（瞬时、不阻塞）。
     const notices: string[] = [];
     if (needsFirstRunHint(store)) notices.push(T('menu.firstRunHint'));
     if (warnFlash) notices.push(warnFlash);
@@ -40,14 +42,14 @@ export async function openMenu(
       if (!refreshed) {
         maybeRefresh(paths.dir);
         refreshed = true;
+        bannerLatest = updateBanner(paths.dir, version);
       }
-      const latest = updateBanner(paths.dir, version);
-      if (latest) notices.push(T('menu.updateAvailable', latest, upgradeCommand()));
+      if (bannerLatest) notices.push(T('menu.updateAvailable', bannerLatest, upgradeCommand()));
     }
     const updLabel = store.update === MODE_NOTIFY ? T('menu.updateNotify') : T('menu.updateOff');
     const buildItems = (): string[] => {
       const labels = profileRows(store.providers, store.current);
-      return [...labels, '', T('menu.newProfile'), T('menu.language'), updLabel, '', T('menu.exit')];
+      return [...labels, '', T('menu.newProfile'), T('menu.language'), updLabel, T('menu.noLogin'), '', T('menu.exit')];
     };
     const onMove = (from: number, to: number): string[] => {
       const ps = store.providers;
@@ -68,7 +70,7 @@ export async function openMenu(
       notice: notices.join('\n'),
       ...(flash ? { status: flash } : {}),
       items: buildItems(),
-      colors: { [n + 1]: 'yellow', [n + 2]: 'dim', [n + 3]: 'dim' },
+      colors: { [n + 1]: 'yellow', [n + 2]: 'dim', [n + 3]: 'dim', [n + 4]: 'yellow' },
       start: sel,
       movableCount: n,
       onMove,
@@ -102,7 +104,7 @@ export async function openMenu(
       continue;
     }
 
-    if (sel < 0 || sel === n + 5) return; // 退出 / Esc / q
+    if (sel < 0 || sel === n + 6) return; // 退出 / Esc / q
     if (sel === n + 1) {
       // 新增配置
       const prov: Provider = { name: '', env: {} };
@@ -122,6 +124,11 @@ export async function openMenu(
       if (store.update === MODE_NOTIFY) delete store.update;
       else store.update = MODE_NOTIFY;
       saveStore(paths, store);
+    } else if (sel === n + 4) {
+      // 一键免登录（铁律唯一豁免：仅写顶层 hasCompletedOnboarding=true，字节级最小修改）
+      const err = markOnboardingDone();
+      if (err) warnFlash = T('menu.noLoginError', err);
+      else flash = T('menu.noLoginDone');
     } else if (sel < n) {
       const target = store.providers[sel];
       if (target) {

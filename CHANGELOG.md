@@ -1,5 +1,12 @@
 # 更新日志
 
+## v0.4.21 — 2026-08-02
+
+- 新增：主菜单「一键免登录」——把 `~/.claude.json` 顶层 `hasCompletedOnboarding` 写为 `true`（mimo 接入文档同款官方免登录做法），下次启动 Claude Code 不再弹登录引导。这是 ccx 写 Claude Code 配置文件的**唯一豁免**：字节级最小修改（单遍扫描替换/插入，绝不整文件 JSON 重排），文件不合法 JSON 或顶层非对象时拒绝写入并报错，值已是 `true` 时幂等不写；符号链接解析后写入（Go / TypeScript 双版本对齐，含 30+ 表驱动单测）
+- 移除：启动时的被动 onboarding 检测——不再每次会话启动全量读取解析 `~/.claude.json`（大文件实测 +122ms/次）取一个布尔字段；改为用户主动触发（见上）
+- 新增（Go 版）：Unix/macOS 下 CLI `xx <名> -s` 改用 `syscall.Exec` 进程替换——常驻进程开销归零、退出码天然透传；Windows 无此机制保持子进程（8 MB / 0% CPU 不变）；菜单内启动两平台均保持子进程以回到菜单
+- 优化：菜单「更新检查：提醒」模式下，`update-check.json` 缓存只在菜单打开时读一次，不再每个键击读盘（Go / TypeScript 双版本对齐）
+
 ## v0.4.20 — 2026-08-01
 
 - 新增：模型列表菜单显示友好名——API 返回 `display_name` 且与 ID 不同（如 GLM 的 `GLM-5.2` vs `glm-5.2`）时显示「友好名 (实际ID)」，主标签可读、括号里是选中后真正填入的值；无 `display_name` 或与 ID 相同时显示不变（Go / TypeScript 双版本对齐）
@@ -45,7 +52,7 @@
 
 - 新增：受管环境变量从 7 个扩展至 9 个，新增 `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` 和 `CLAUDE_CODE_AUTO_COMPACT_WINDOW`；切换配置时自动清除，编辑表单中可直接填写（Go / TypeScript 双版本对齐）
 - 新增：GLM 预设自动预填 `DISABLE_NONESSENTIAL_TRAFFIC=1`（GLM 要求）和 `AUTO_COMPACT_WINDOW=1000000`（匹配 GLM 1M 上下文窗口），通过 `presets.json` → Preset.Env → 编辑表单 picker 传递，新建或重新选择 GLM 配置时自动生效
-- 新增（Go 版）：`internal/claudecfg` 包——只读检测 `~/.claude.json` 的 `hasCompletedOnboarding` 字段；非官方配置「本次启用」时若 onboarding 未完成，打印非阻塞提示（永不写入 Claude Code 配置文件）
+- 新增（Go 版）：`internal/claudecfg` 包——只读检测 `~/.claude.json` 的 `hasCompletedOnboarding` 字段；非官方配置「本次启用」时若 onboarding 未完成，打印非阻塞提示（该机制已在 v0.4.21 移除，改为主菜单「一键免登录」主动写入）
 - 新增：`Preset.Env` 字段（Go + TypeScript），基于白名单规范化，仅允许 CC-behavior 变量（不含鉴权 key）
 
 ## v0.4.8 — 2026-06-10
