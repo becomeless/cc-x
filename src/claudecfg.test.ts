@@ -68,6 +68,19 @@ test('markOnboardingDone 文件不存在时创建最小文件', () => {
   assert.equal(readFileSync(p).toString(), '{"hasCompletedOnboarding": true}\n');
 });
 
+// 镜像 Go 版 TestMarkOnboardingDoneBOMInsideAfterValidPrefix：BOM（U+FEFF）在字符串值内部
+// 是合法 JSON，splice 必须按字节处理、不污染多字节内容。
+test('markOnboardingDone 字符串值内嵌 BOM 不被污染', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ccx-claudecfg-'));
+  const p = join(dir, '.claude.json');
+  const bom = Buffer.from([0xef, 0xbb, 0xbf]);
+  writeFileSync(p, Buffer.concat([Buffer.from('{"x":"'), bom, Buffer.from('","hasCompletedOnboarding":false}')]));
+  assert.equal(markOnboardingDoneIn(p), undefined);
+  const got = readFileSync(p);
+  const want = Buffer.concat([Buffer.from('{"x":"'), bom, Buffer.from('","hasCompletedOnboarding":true}')]);
+  assert.equal(got.equals(want), true, `多字节内容被污染: ${got.toString('hex')}`);
+});
+
 test('markOnboardingDone 幂等：第二次不写（字节与 mtime 不变）', () => {
   const dir = mkdtempSync(join(tmpdir(), 'ccx-claudecfg-'));
   const p = join(dir, '.claude.json');

@@ -8,7 +8,7 @@
  * 替换成 U+FFFD、且 JS 字符串索引是 UTF-16 码元与字节偏移不一致，重写会污染文件。与 Go 版
  * internal/claudecfg/onboarding.go 逐字节对齐。
  */
-import { chmodSync, readFileSync, realpathSync, renameSync, statSync, writeFileSync } from 'node:fs';
+import { chmodSync, readFileSync, realpathSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 
@@ -211,7 +211,8 @@ function firstNonSpaceAt(buf: Buffer): number {
   return i;
 }
 
-/** 同目录 temp + rename 原子写；已存在时保留原权限位（Windows 上 chmod 仅只读位，可忽略）。 */
+/** 同目录 temp + rename 原子写；已存在时保留原权限位（Windows 上 chmod 仅只读位，可忽略）。
+ * rename 失败时清理 temp（对齐 Go 版 atomicWrite 的 defer 清理，不留孤儿文件）。 */
 function writeAtomic(path: string, data: Buffer): void {
   const tmp = `${path}.tmp-${process.pid}`;
   writeFileSync(tmp, data);
@@ -220,5 +221,14 @@ function writeAtomic(path: string, data: Buffer): void {
   } catch {
     // 原文件不存在或 chmod 失败：跳过
   }
-  renameSync(tmp, path);
+  try {
+    renameSync(tmp, path);
+  } catch (e) {
+    try {
+      unlinkSync(tmp);
+    } catch {
+      // 清理失败忽略（原异常优先）
+    }
+    throw e;
+  }
 }
