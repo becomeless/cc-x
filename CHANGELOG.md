@@ -1,5 +1,9 @@
 # 更新日志
 
+## v0.4.22 — 2026-08-02
+
+- 修复：原子写失败清理临时文件——`claudecfg.ts` 的 `writeAtomic` 与 `update` 缓存写（Go + TS）在写入或 rename 失败时清理 `.tmp` 残留，与 Go 版 `defer` 清理语义完全对齐，不留孤儿文件（Go / TypeScript 双版本对齐）
+
 ## v0.4.21 — 2026-08-02
 
 - 新增：主菜单「一键免登录」——把 `~/.claude.json` 顶层 `hasCompletedOnboarding` 写为 `true`（mimo 接入文档同款官方免登录做法），下次启动 Claude Code 不再弹登录引导。这是 ccx 写 Claude Code 配置文件的**唯一豁免**：字节级最小修改（单遍扫描替换/插入，绝不整文件 JSON 重排），文件不合法 JSON 或顶层非对象时拒绝写入并报错，值已是 `true` 时幂等不写；符号链接解析后写入（Go / TypeScript 双版本对齐，含 30+ 表驱动单测）
