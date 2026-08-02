@@ -94,6 +94,7 @@ func readCache(storeDir string) (cache, error) {
 }
 
 // writeCache 原子写（temp + rename），避免后台 goroutine 被进程退出打断写出半截文件。
+// 写或 rename 失败都清理 tmp（对齐 claudecfg.atomicWrite 的清理语义，不留孤儿文件）。
 func writeCache(storeDir string, c cache) {
 	if err := os.MkdirAll(storeDir, 0o755); err != nil {
 		return
@@ -104,9 +105,12 @@ func writeCache(storeDir string, c cache) {
 	}
 	tmp := cachePath(storeDir) + ".tmp"
 	if err := os.WriteFile(tmp, data, 0o644); err != nil {
+		_ = os.Remove(tmp) // 写失败也可能留下半截 tmp
 		return
 	}
-	_ = os.Rename(tmp, cachePath(storeDir))
+	if err := os.Rename(tmp, cachePath(storeDir)); err != nil {
+		_ = os.Remove(tmp)
+	}
 }
 
 // fetchLatest 用 curl 子进程获取 releases/latest 的 302 Location 并抠出版本号。

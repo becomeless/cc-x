@@ -5,7 +5,7 @@
  * ~/.cc-mini/update-check.json，每 24h 才真去网络。显示永远读缓存（瞬时、不阻塞），过期时后台
  * 异步刷新——新版本「下次打开」才提示。离线/失败一律静默。只写工具自己的 ~/.cc-mini/（铁律）。
  */
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export const MODE_OFF = '';
@@ -63,15 +63,20 @@ function readCache(storeDir: string): Cache | undefined {
   return undefined;
 }
 
-/** 原子写（temp + rename），避免被进程退出打断写出半截文件。 */
+/** 原子写（temp + rename），避免被进程退出打断写出半截文件。
+ * 写或 rename 失败都清理 tmp（对齐 Go 版 writeCache，不留孤儿文件）。 */
 function writeCache(storeDir: string, c: Cache): void {
+  const tmp = `${cachePath(storeDir)}.tmp`;
   try {
     if (!existsSync(storeDir)) mkdirSync(storeDir, { recursive: true });
-    const tmp = `${cachePath(storeDir)}.tmp`;
     writeFileSync(tmp, JSON.stringify(c), 'utf-8');
     renameSync(tmp, cachePath(storeDir));
   } catch {
-    /* 写不了就算了 */
+    try {
+      unlinkSync(tmp);
+    } catch {
+      /* 清理失败忽略；写不了就算了 */
+    }
   }
 }
 

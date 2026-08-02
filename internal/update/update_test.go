@@ -1,6 +1,7 @@
 package update
 
 import (
+	"os"
 	"testing"
 	"time"
 )
@@ -45,6 +46,22 @@ func TestCacheRoundtrip(t *testing.T) {
 	}
 	if got.Latest != want.Latest || got.CheckedAt != want.CheckedAt {
 		t.Fatalf("往返不一致：want %+v got %+v", want, got)
+	}
+}
+
+// TestCacheWriteCleansTempOnRenameFailure：目标路径是已存在目录 -> WriteFile(tmp) 成功、
+// Rename 失败（双平台均如此），断言 tmp 被清理、目录未被破坏。
+func TestCacheWriteCleansTempOnRenameFailure(t *testing.T) {
+	dir := t.TempDir()
+	if err := os.MkdirAll(cachePath(dir), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	writeCache(dir, cache{CheckedAt: 1, Latest: "0.4.4"})
+	if _, err := os.Stat(cachePath(dir) + ".tmp"); !os.IsNotExist(err) {
+		t.Fatalf("Rename 失败后 tmp 应被清理，Stat err=%v", err)
+	}
+	if fi, err := os.Stat(cachePath(dir)); err != nil || !fi.IsDir() {
+		t.Fatalf("目标目录应保持完好：err=%v dir=%v", err, fi != nil && fi.IsDir())
 	}
 }
 
