@@ -29,7 +29,7 @@ different path: **switching happens purely at the environment-variable layer.** 
 reads or writes any Claude Code config file. Your MCP, plugins, hooks — it won't touch them.
 
 ```text
-  CC-X v0.4.20     Default: Official
+  CC-X v0.4.21     Default: Official
 
      Official
    ▶ DeepSeek     work   · effort=max
