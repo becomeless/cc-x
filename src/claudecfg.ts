@@ -212,16 +212,16 @@ function firstNonSpaceAt(buf: Buffer): number {
 }
 
 /** 同目录 temp + rename 原子写；已存在时保留原权限位（Windows 上 chmod 仅只读位，可忽略）。
- * rename 失败时清理 temp（对齐 Go 版 atomicWrite 的 defer 清理，不留孤儿文件）。 */
+ * 任何失败（write/chmod/rename）都清理 temp，等价 Go 版 atomicWrite 的 defer 清理，不留孤儿文件。 */
 function writeAtomic(path: string, data: Buffer): void {
   const tmp = `${path}.tmp-${process.pid}`;
-  writeFileSync(tmp, data);
   try {
-    chmodSync(tmp, statSync(path).mode);
-  } catch {
-    // 原文件不存在或 chmod 失败：跳过
-  }
-  try {
+    writeFileSync(tmp, data);
+    try {
+      chmodSync(tmp, statSync(path).mode);
+    } catch {
+      // 原文件不存在或 chmod 失败：跳过
+    }
     renameSync(tmp, path);
   } catch (e) {
     try {
