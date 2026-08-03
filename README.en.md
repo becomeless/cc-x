@@ -29,7 +29,7 @@ endpoints, credentials, and model mappings purely at the environment-variable la
 rewrites your MCP, plugins, hooks, or other Claude Code behavior settings.
 
 ```text
-  CC-X v0.4.22     Default: Official
+  CC-X v0.4.23     Default: Official
 
      Official
    ▶ DeepSeek     work   · effort=max
