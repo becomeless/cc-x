@@ -114,7 +114,7 @@ func catalogPreset(catalog []presets.Preset, w *workCopy) *presets.Preset {
 	return findPreset(catalog, w.name)
 }
 
-// buildModelItems 构建模型列表菜单条目与 1M 标记（仅 opus/sonnet 档命中供应商 1M 表才标 [1M]）。
+// buildModelItems 构建模型列表菜单条目与 1M 标记（opus/sonnet/fable 档命中供应商 1M 表才标 [1M]；haiku 不标）。
 // 有 display_name 且与 ID 不同（如 GLM 返回 "GLM-5.2" + id "glm-5.2"）时显示「友好名 (实际ID)」——
 // 主标签可读，括号里是选中后真正填入的值。
 func buildModelItems(models []presets.ModelInfo, pp *presets.Preset, slot string) (items []string, is1M []bool) {
@@ -135,8 +135,8 @@ func buildModelItems(models []presets.ModelInfo, pp *presets.Preset, slot string
 	return items, is1M
 }
 
-// pickFromList 从已拉取的模型列表选一个；opus/sonnet 档命中 1M 表自动附加 [1m] 后缀
-// （想用 200K 可在表单行手动删）；haiku/fable 档永不附加。取消返回 false。
+// pickFromList 从已拉取的模型列表选一个；opus/sonnet/fable 档命中 1M 表自动附加 [1m] 后缀
+// （想用 200K 可在表单行手动删）；haiku 档不附加。取消返回 false。
 func pickFromList(t *Terminal, models []presets.ModelInfo, items []string, is1M []bool, slot, title, hint string) (string, bool) {
 	sel := SelectMenu(t, SelectOptions{Title: title, Items: items, Start: 0, Hint: hint, NoNumber: true})
 	if sel < 0 {

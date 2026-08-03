@@ -199,7 +199,7 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 | 小米MiMo | `https://api.xiaomimimo.com/anthropic` | `mimo-v2.5-pro` | `mimo-v2.5-pro` | — | — |
 
 > 模型名随各家更新而变，以供应商官方接入文档为准。小米有按量付费和 TokenPlan 两个地址，选供应商时会让你挑。
-> 四个模型档位行（opus/sonnet/haiku/fable）编辑时可选「从模型列表选择」——从供应商 API 拉取实际可用模型；**仅 opus/sonnet 档**命中 1M 支持表（如 `deepseek-v4-pro`、`glm-5.2`、`mimo-v2.5-pro`）的模型标 `[1M]` 并自动附 `[1m]` 后缀（官方文档仅这两个映射变量支持 `[1m]`），haiku/fable 档不附加；失败回退手动输入。
+> 四个模型档位行（opus/sonnet/haiku/fable）编辑时可选「从模型列表选择」——从供应商 API 拉取实际可用模型；**opus/sonnet/fable 档**命中 1M 支持表（如 `deepseek-v4-pro`、`glm-5.2`、`mimo-v2.5-pro`）的模型标 `[1M]` 并自动附 `[1m]` 后缀（Claude Code 通过 `[1m]` 标记识别扩展上下文，第三方 fable 档映射无标记会按 200K 管理），haiku 档不附加；失败回退手动输入。
 
 ### 进阶
 

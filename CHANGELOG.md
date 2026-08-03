@@ -1,5 +1,9 @@
 # 更新日志
 
+## v0.4.24 — 未发布
+
+- 修复：fable 档恢复自动附加 `[1m]` 后缀——v0.4.23 将附加限制为 opus/sonnet 档，实测发现第三方映射到 fable 档的模型无 `[1m]` 标记时 Claude Code 按 200K 管理上下文（`[1m]` 是其读取的能力标记，发送前剥离；当前运行时识别 `fable[1m]`）。修正为 opus/sonnet/fable 档命中供应商 `models_1m` 表才附加，haiku 档仍不附加；官方 Fable 5 不命中 1M 表，不受影响（Go / TypeScript 双版本对齐，含 fable 命中/未命中双用例）
+
 ## v0.4.23 — 2026-08-02
 
 - 修复：`[1m]` 后缀仅 opus/sonnet 档自动附加——模型列表选择改由档位感知（`applyModelSelection` / `CanAttach1M`），haiku/fable 档不再附加（官方文档仅 `ANTHROPIC_DEFAULT_OPUS_MODEL` / `ANTHROPIC_DEFAULT_SONNET_MODEL` 文档化支持 `[1m]`；Claude Code 内部 quota probe 等路径仍会字面发送带后缀模型名导致 404）（Go / TypeScript 双版本对齐，含 4 档 × 2 状态矩阵单测）

@@ -104,13 +104,13 @@ func TestSupports1M(t *testing.T) {
 	}
 }
 
-// TestCanAttach1M：仅 opus/sonnet 档允许自动附加 [1m]。
+// TestCanAttach1M：opus/sonnet/fable 档允许自动附加 [1m]，haiku 不允许。
 func TestCanAttach1M(t *testing.T) {
 	cases := map[string]bool{
 		"opus":   true,
 		"sonnet": true,
+		"fable":  true,
 		"haiku":  false,
-		"fable":  false,
 	}
 	for slot, want := range cases {
 		if got := CanAttach1M(slot); got != want {
@@ -133,7 +133,8 @@ func TestApplyModelSelection(t *testing.T) {
 		{"sonnet 命中", "sonnet", "deepseek-v4-pro", true, "deepseek-v4-pro[1m]"},
 		{"sonnet 未命中", "sonnet", "deepseek-v4-flash", false, "deepseek-v4-flash"},
 		{"haiku 命中也不附加", "haiku", "glm-5.2", true, "glm-5.2"},
-		{"fable 命中也不附加", "fable", "glm-5.2", true, "glm-5.2"},
+		{"fable 命中附加", "fable", "glm-5.2", true, "glm-5.2[1m]"},
+		{"fable 未命中不附加", "fable", "glm-5.2-air", false, "glm-5.2-air"},
 		{"已带后缀幂等", "opus", "glm-5.2[1m]", true, "glm-5.2[1m]"},
 	}
 	for _, c := range cases {

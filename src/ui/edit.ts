@@ -82,7 +82,7 @@ function resolveModelsEndpoint(pp: Preset | undefined, baseUrl: string): string 
   return pp.modelsApi;
 }
 
-/** 构建模型列表菜单条目与 1M 标记（仅 opus/sonnet 档命中供应商 1M 表才标 [1M]）。对齐 Go 版 buildModelItems。
+/** 构建模型列表菜单条目与 1M 标记（opus/sonnet/fable 档命中供应商 1M 表才标 [1M]；haiku 不标）。对齐 Go 版 buildModelItems。
  *  有 display_name 且与 ID 不同时显示「友好名 (实际ID)」——主标签可读，括号里是选中后真正填入的值。 */
 function buildModelItems(models: ModelInfo[], pp: Preset | undefined, slot: ModelSlot): { items: string[]; is1M: boolean[] } {
   const is1M = models.map((m) => canAttach1M(slot) && supports1M(pp, m.id));
@@ -97,8 +97,8 @@ function buildModelItems(models: ModelInfo[], pp: Preset | undefined, slot: Mode
   return { items, is1M };
 }
 
-/** 从已拉取的模型列表选一个；opus/sonnet 档命中 1M 表自动附加 [1m] 后缀（想用 200K 可在表单行手动删）。
- *  haiku/fable 档永不附加。取消返回 null。 */
+/** 从已拉取的模型列表选一个；opus/sonnet/fable 档命中 1M 表自动附加 [1m] 后缀（想用 200K 可在表单行手动删）。
+ *  haiku 档不附加。取消返回 null。 */
 async function pickFromList(
   models: ModelInfo[],
   items: string[],

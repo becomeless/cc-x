@@ -38,10 +38,12 @@ func Supports1M(p *Preset, modelID string) bool {
 	return false
 }
 
-// CanAttach1M 档位是否允许自动附加 [1m] 后缀：官方文档仅为 opus/sonnet 映射变量说明 [1m]，
-// 因此 haiku/fable 不自动附加。与 TS 版对齐。
+// CanAttach1M 档位是否允许自动附加 [1m] 后缀：Claude Code 支持通过 [1m] 标记扩展上下文，
+// 并在当前运行时中识别 opus/sonnet/fable；第三方映射到 fable 档的模型需要该标记声明 1M 能力
+// （无标记按 200K 管理）。haiku 没有对应的文档和运行时依据，不自动附加。
+// 是否真正附加仍由供应商 models_1m 支持表决定。与 TS 版对齐。
 func CanAttach1M(slot string) bool {
-	return slot == "opus" || slot == "sonnet"
+	return slot == "opus" || slot == "sonnet" || slot == "fable"
 }
 
 // ApplyModelSelection 从模型列表选中一个模型后的落值：允许附加且命中 1M 表时加 [1m] 后缀

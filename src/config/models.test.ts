@@ -8,11 +8,11 @@ import { test } from 'node:test';
 
 import { applyModelSelection, canAttach1M, fetchModels, parseModels } from './models.js';
 
-test('canAttach1M：仅 opus/sonnet 允许', () => {
+test('canAttach1M：opus/sonnet/fable 允许，haiku 不允许', () => {
   assert.equal(canAttach1M('opus'), true);
   assert.equal(canAttach1M('sonnet'), true);
+  assert.equal(canAttach1M('fable'), true);
   assert.equal(canAttach1M('haiku'), false);
-  assert.equal(canAttach1M('fable'), false);
 });
 
 test('applyModelSelection：4 档 × 支持/不支持 + 已带后缀幂等', () => {
@@ -22,7 +22,8 @@ test('applyModelSelection：4 档 × 支持/不支持 + 已带后缀幂等', () 
     { name: 'sonnet 命中', slot: 'sonnet', id: 'deepseek-v4-pro', hit: true, want: 'deepseek-v4-pro[1m]' },
     { name: 'sonnet 未命中', slot: 'sonnet', id: 'deepseek-v4-flash', hit: false, want: 'deepseek-v4-flash' },
     { name: 'haiku 命中也不附加', slot: 'haiku', id: 'glm-5.2', hit: true, want: 'glm-5.2' },
-    { name: 'fable 命中也不附加', slot: 'fable', id: 'glm-5.2', hit: true, want: 'glm-5.2' },
+    { name: 'fable 命中附加', slot: 'fable', id: 'glm-5.2', hit: true, want: 'glm-5.2[1m]' },
+    { name: 'fable 未命中不附加', slot: 'fable', id: 'glm-5.2-air', hit: false, want: 'glm-5.2-air' },
     { name: '已带后缀幂等', slot: 'opus', id: 'glm-5.2[1m]', hit: true, want: 'glm-5.2[1m]' },
   ];
   for (const c of cases) {
