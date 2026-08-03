@@ -8,6 +8,7 @@ package presets
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -37,12 +38,37 @@ func Supports1M(p *Preset, modelID string) bool {
 	return false
 }
 
+// CanAttach1M 档位是否允许自动附加 [1m] 后缀：官方文档仅为 opus/sonnet 映射变量说明 [1m]，
+// 因此 haiku/fable 不自动附加。与 TS 版对齐。
+func CanAttach1M(slot string) bool {
+	return slot == "opus" || slot == "sonnet"
+}
+
+// ApplyModelSelection 从模型列表选中一个模型后的落值：允许附加且命中 1M 表时加 [1m] 后缀
+// （已带后缀则幂等不重复）。纯函数，便于矩阵单测（对齐 TS 版 applyModelSelection）。
+func ApplyModelSelection(slot, modelID string, supports1M bool) string {
+	if !CanAttach1M(slot) || !supports1M {
+		return modelID
+	}
+	return strings.TrimSuffix(modelID, "[1m]") + "[1m]"
+}
+
 // modelsTimeout 是拉取模型列表的请求超时。
 const modelsTimeout = 10 * time.Second
 
-// FetchModels 拉取模型列表。baseURL 是 Anthropic 兼容端点，apiKey 是认证令牌。
-// endpoint 为空时推导 {baseURL}/v1/models。返回失败时 error 带上可读原因（含响应里的 msg 字段）。
-func FetchModels(baseURL, apiKey, endpoint string) ([]ModelInfo, error) {
+// maxModelsBody 模型列表响应上限（对齐 TS 版；防御异常/恶意端点的大响应）。
+const maxModelsBody = 1 << 20
+
+// errRedirectRefused 模型列表端点发生重定向时 CheckRedirect 返回的错误（拒绝跟随）。
+// 模型列表端点不应重定向；跨主机重定向会泄露认证头——Go 的敏感头剥离列表（Authorization 等）
+// 不含 x-api-key，跨域跟随会把 x-api-key 原样转发到第三方主机。
+var errRedirectRefused = errors.New("模型列表端点发生重定向，已拒绝")
+
+// FetchModels 拉取模型列表。baseURL 是 Anthropic 兼容端点，token 是认证凭据（Bearer token 或 API key），
+// auth 决定携带哪个认证头（AuthToken → Authorization: Bearer；AuthAPIKey → x-api-key）——
+// 与编辑表单的 auth 选择一致，也即 Claude Code 实际调用时使用的头，不再双头齐发。
+// endpoint 为空时推导 {baseURL}/v1/models。3xx 重定向一律拒绝。返回失败时 error 带上可读原因。
+func FetchModels(baseURL, token, auth, endpoint string) ([]ModelInfo, error) {
 	if strings.TrimSpace(endpoint) == "" {
 		endpoint = strings.TrimRight(strings.TrimSpace(baseURL), "/") + "/v1/models"
 	}
@@ -50,22 +76,39 @@ func FetchModels(baseURL, apiKey, endpoint string) ([]ModelInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("请求地址无效: %w", err)
 	}
-	// 双认证头都带上：Anthropic 官方认 x-api-key，国产中转一般认 Authorization: Bearer。
-	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("x-api-key", apiKey)
 	req.Header.Set("User-Agent", "ccx")
+	req.Header.Set("anthropic-version", "2023-06-01")
+	if auth == AuthAPIKey {
+		req.Header.Set("x-api-key", token)
+	} else {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
 
-	client := &http.Client{Timeout: modelsTimeout}
+	client := &http.Client{
+		Timeout: modelsTimeout,
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return fmt.Errorf("%w：%s", errRedirectRefused, req.URL)
+		},
+	}
 	resp, err := client.Do(req)
 	if err != nil {
+		if errors.Is(err, errRedirectRefused) {
+			return nil, err
+		}
 		return nil, fmt.Errorf("网络错误: %w", err)
 	}
 	defer resp.Body.Close()
-	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	// 多读 1 字节检测是否超限：chunked 响应没有 Content-Length，必须按实际字节数判断。
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxModelsBody+1))
 	if err != nil {
 		return nil, fmt.Errorf("读取响应失败: %w", err)
 	}
-	if resp.StatusCode >= 400 {
+	if len(body) > maxModelsBody {
+		return nil, errors.New("响应超过 1 MiB，已拒绝")
+	}
+	// 300-399 一律拒绝：跟随类 3xx 已被 CheckRedirect 拦截，这里兜底非跟随类（300/304 等），
+	// 与 TS 版 redirect:'manual' 显式检查所有 3xx 的行为一致。
+	if resp.StatusCode >= 300 {
 		return nil, fmt.Errorf("HTTP %d: %s（%s）", resp.StatusCode, extractErrMsg(body), endpoint)
 	}
 	return parseModels(body)

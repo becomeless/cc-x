@@ -21,12 +21,12 @@
 
 ---
 
-> `xx` — one command to switch Claude Code between APIs. **Zero config risk.**
+> `xx` — one command to switch Claude Code between APIs. **No API-config clobbering.**
 
 Switching Claude Code between the official account and third-party APIs means juggling
-environment variables — or trusting a tool that rewrites your Claude config. CC-X takes a
-different path: **switching happens purely at the environment-variable layer.** It never
-reads or writes any Claude Code config file. Your MCP, plugins, hooks — it won't touch them.
+environment variables — or trusting a tool that rewrites your Claude config. CC-X keeps API
+endpoints, credentials, and model mappings purely at the environment-variable layer. It never
+rewrites your MCP, plugins, hooks, or other Claude Code behavior settings.
 
 ```text
   CC-X v0.4.22     Default: Official
@@ -165,8 +165,8 @@ cc-switch is an excellent full-featured GUI; CC-X takes the opposite, minimal ap
 |---|---|---|
 | Form | Terminal command (lightweight) | Desktop GUI (full-featured) |
 | Scope | Just API switching | API + MCP + multiple CLIs + prompts… |
-| Touches config? | **Never** (env vars only) | Rewrites config from its own DB |
-| Can lose MCP? | **Physically impossible** | Users have reported it |
+| API/model configuration | **Never written to config files** (env vars only) | Written through its own config system |
+| Claude config boundary | No MCP/plugin/hook management; only one user-initiated onboarding boolean edit | Broader configuration scope |
 | Parallel terminals | **Native** (process isolation) | Global switch; sessions can clash |
 
 - → **CC-X**: terminal natives, parallel-session runners, anyone burned by a config-wrecking switcher, "just switch the API" people
@@ -180,9 +180,9 @@ cc-switch is an excellent full-featured GUI; CC-X takes the opposite, minimal ap
 
 Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 10 managed environment variables, then let Claude Code run.
 
-That constraint is deliberate: no writes to Claude Code config files, no MCP management, no automatic migration, no resident background controller. If process environment variables can solve it, CC-X avoids global files; if a choice matters, the user makes it explicitly. Doing less keeps the failure surface small.
+That constraint is deliberate: API endpoints, credentials, and model mappings never go into Claude Code config files; there is no MCP/plugin/hook management, automatic migration, or resident background controller. The only Claude Code config mutation is the explicit "Skip login" action described below, limited to one onboarding boolean. Doing less keeps the failure surface small.
 
-Issues / PRs are welcome, but the direction is clear: **make switching steadier, clearer, and less intrusive** before adding broader management power. Anything that writes a Claude Code config file will not be accepted.
+Issues / PRs are welcome, but the direction is clear: **make switching steadier, clearer, and less intrusive** before adding broader management power. The onboarding exception must never be broadened to API/model settings, MCP, plugins, hooks, or other behavior configuration.
 
 ---
 
@@ -199,7 +199,7 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 | sonnet → model | `ANTHROPIC_DEFAULT_SONNET_MODEL` | |
 | haiku → model | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
 | fable → model | `ANTHROPIC_DEFAULT_FABLE_MODEL` | Top tier (e.g. Fable 5); leave empty if the provider has none |
-| subagent → model | `CLAUDE_CODE_SUBAGENT_MODEL` | Model for subagents/agent teams; **empty = official default (inherit main model)**. To save cost, fill `haiku` (alias, follows this profile's haiku tier) or a concrete model ID |
+| subagent → model | `CLAUDE_CODE_SUBAGENT_MODEL` | Model for subagents/agent teams; **empty = do not force an override; inherit the main model when no other model is specified**. To save cost, fill `haiku` (alias, follows this profile's haiku tier) or a concrete model ID |
 | effort level | `CLAUDE_CODE_EFFORT_LEVEL` | `low`–`max`; `auto` = model default; empty = unset. Third parties may not honor it |
 | Disable nonessential traffic | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1` disables nonessential Claude Code traffic; empty = unset. Zhipu GLM defaults to `1` |
 
@@ -226,8 +226,9 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 > endpoints; you pick one when selecting the provider.
 > Editing any model tier (opus/sonnet/haiku/fable) offers "Pick from model list" — pulls the
 > provider's actual models; models supporting 1M context (e.g. `deepseek-v4-pro`, `glm-5.2`,
-> `mimo-v2.5-pro`) are marked `[1M]` and get the `[1m]` suffix automatically — no typing.
-> Falls back to manual input on failure.
+> `mimo-v2.5-pro`) are marked `[1M]` and get the `[1m]` suffix automatically — **only on the
+> opus/sonnet tiers** (the official docs document `[1m]` for those two mapping variables only);
+> haiku/fable tiers never append the suffix. Falls back to manual input on failure.
 
 ### Advanced
 
@@ -253,9 +254,10 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
   - Windows → registry `HKCU\Environment` + one change broadcast
   - Unix → `# >>> xx >>>` … `# <<< xx <<<` marker block in shell startup file (idempotent rewrite, chosen by `$SHELL`)
   - Same semantics either way: **only affects new terminals**; switching to "Official" clears all managed vars
-- **No Claude Code config file is ever modified** — except the one explicit, user-initiated
-  exception: the "Skip login" menu entry writes the single `hasCompletedOnboarding` top-level
-  boolean in `~/.claude.json` (byte-level minimal edit; invalid JSON is refused).
+- **Claude Code behavior configuration is not managed or rewritten.** The sole config mutation is
+  the explicit, user-initiated "Skip login" action, which writes only the top-level
+  `hasCompletedOnboarding` boolean in `~/.claude.json` (byte-level minimal atomic edit; invalid JSON
+  is refused). It never writes API/model settings, MCP, plugins, or hooks.
 
 CC-X only touches these 10 "managed" variables (and clears the ones a target profile doesn't use):
 `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `ANTHROPIC_DEFAULT_OPUS_MODEL`,

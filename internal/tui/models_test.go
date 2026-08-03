@@ -22,7 +22,7 @@ func testCatalog() []presets.Preset {
 				{Label: "TokenPlan", URL: "https://token-plan-cn.xiaomimimo.com/anthropic"},
 			},
 			ModelsAPIMap: map[string]string{
-				"https://api.xiaomimimo.com/anthropic":            "https://api.xiaomimimo.com/v1/models",
+				"https://api.xiaomimimo.com/anthropic":           "https://api.xiaomimimo.com/v1/models",
 				"https://token-plan-cn.xiaomimimo.com/anthropic": "https://token-plan-cn.xiaomimimo.com/v1/models",
 			},
 		},

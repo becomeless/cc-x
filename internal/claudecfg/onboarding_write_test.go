@@ -184,6 +184,61 @@ func TestMarkOnboardingDoneCreatesNewFile(t *testing.T) {
 	if string(got) != "{\"hasCompletedOnboarding\": true}\n" {
 		t.Fatalf("新文件内容不符: %q", got)
 	}
+	if runtime.GOOS != "windows" {
+		st, _ := os.Stat(p)
+		if mode := st.Mode().Perm(); mode != 0o600 {
+			t.Fatalf("新建文件权限应为 0600，实际 %o", mode)
+		}
+	}
+}
+
+// TestMarkOnboardingDonePreservesMode：已存在文件保留原权限位（CreateTemp 0600 会被 Chmod 回原权限）。
+func TestMarkOnboardingDonePreservesMode(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("权限位语义仅 POSIX")
+	}
+	dir := t.TempDir()
+	p := filepath.Join(dir, ".claude.json")
+	if err := os.WriteFile(p, []byte(`{"hasCompletedOnboarding":false}`), 0o640); err != nil {
+		t.Fatal(err)
+	}
+	if err := MarkOnboardingDoneIn(p); err != nil {
+		t.Fatal(err)
+	}
+	st, _ := os.Stat(p)
+	if mode := st.Mode().Perm(); mode != 0o640 {
+		t.Fatalf("已存在文件应保留原权限 0640，实际 %o", mode)
+	}
+}
+
+// TestMarkOnboardingDoneReadonlyWindows：Windows 上只读目标使 rename 失败 →
+// 报错 + temp 清理（清理前先 Chmod 恢复可写，否则只读 temp 无法删除）+ 原文件不变。
+// POSIX 上 rename 取决于父目录权限，可覆盖只读目标（见 atomicWrite 注释），该行为不测。
+func TestMarkOnboardingDoneReadonlyWindows(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("只读目标阻挡 rename 仅 Windows 语义")
+	}
+	dir := t.TempDir()
+	p := filepath.Join(dir, ".claude.json")
+	if err := os.WriteFile(p, []byte(`{"hasCompletedOnboarding":false}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(p, 0o444); err != nil {
+		t.Fatal(err)
+	}
+	if err := MarkOnboardingDoneIn(p); err == nil {
+		t.Fatal("只读目标应报错")
+	}
+	entries, _ := os.ReadDir(dir)
+	for _, e := range entries {
+		if strings.HasPrefix(e.Name(), ".claude.json-") {
+			t.Fatalf("temp 未清理: %s", e.Name())
+		}
+	}
+	got, _ := os.ReadFile(p)
+	if string(got) != `{"hasCompletedOnboarding":false}` {
+		t.Fatalf("原文件被改动: %q", got)
+	}
 }
 
 // TestMarkOnboardingDoneIdempotent 第二次调用不写盘：字节与 mtime 都不变。

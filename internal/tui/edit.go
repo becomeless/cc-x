@@ -11,6 +11,14 @@ import (
 	"github.com/becomeless/cc-x/internal/presets"
 )
 
+// 模型档位（与 TS 版 ModelSlot 对齐）：决定「从模型列表选择」是否自动附加 [1m] 后缀。
+const (
+	slotOpus   = "opus"
+	slotSonnet = "sonnet"
+	slotHaiku  = "haiku"
+	slotFable  = "fable"
+)
+
 type workCopy struct {
 	name, note, base, auth, token, opus, sonnet, haiku, fable, subagent, effort string
 	disableTraffic                                                              string
@@ -47,7 +55,7 @@ func toggleLabel(show bool) string {
 	return i18n.T("edit.toggleSecretShow")
 }
 
-// subagentLabel 子代理行为空时显示「默认」（官方默认=继承主模型），不显示 (空)。
+// subagentLabel 子代理行为空时显示「默认」（不强制覆盖；未另行指定时继承主模型），不显示 (空)。
 func subagentLabel(v string) string {
 	if strings.TrimSpace(v) == "" {
 		return i18n.T("edit.default")
@@ -106,18 +114,19 @@ func catalogPreset(catalog []presets.Preset, w *workCopy) *presets.Preset {
 	return findPreset(catalog, w.name)
 }
 
-// buildModelItems 构建模型列表菜单条目与 1M 标记（命中供应商 1M 表的标 [1M]）。
+// buildModelItems 构建模型列表菜单条目与 1M 标记（仅 opus/sonnet 档命中供应商 1M 表才标 [1M]）。
 // 有 display_name 且与 ID 不同（如 GLM 返回 "GLM-5.2" + id "glm-5.2"）时显示「友好名 (实际ID)」——
 // 主标签可读，括号里是选中后真正填入的值。
-func buildModelItems(models []presets.ModelInfo, pp *presets.Preset) (items []string, is1M []bool) {
+func buildModelItems(models []presets.ModelInfo, pp *presets.Preset, slot string) (items []string, is1M []bool) {
 	items = make([]string, 0, len(models))
 	is1M = make([]bool, len(models))
+	attach := presets.CanAttach1M(slot)
 	for i, m := range models {
 		label := m.ID
 		if m.DisplayName != "" && m.DisplayName != m.ID {
 			label = m.DisplayName + " (" + m.ID + ")"
 		}
-		if presets.Supports1M(pp, m.ID) {
+		if attach && presets.Supports1M(pp, m.ID) {
 			label += "  [1M]"
 			is1M[i] = true
 		}
@@ -126,22 +135,19 @@ func buildModelItems(models []presets.ModelInfo, pp *presets.Preset) (items []st
 	return items, is1M
 }
 
-// pickFromList 从已拉取的模型列表选一个；命中 1M 表自动附加 [1m] 后缀（想用 200K 可在表单行手动删）。取消返回 false。
-func pickFromList(t *Terminal, models []presets.ModelInfo, items []string, is1M []bool, title, hint string) (string, bool) {
+// pickFromList 从已拉取的模型列表选一个；opus/sonnet 档命中 1M 表自动附加 [1m] 后缀
+// （想用 200K 可在表单行手动删）；haiku/fable 档永不附加。取消返回 false。
+func pickFromList(t *Terminal, models []presets.ModelInfo, items []string, is1M []bool, slot, title, hint string) (string, bool) {
 	sel := SelectMenu(t, SelectOptions{Title: title, Items: items, Start: 0, Hint: hint, NoNumber: true})
 	if sel < 0 {
 		return "", false
 	}
-	model := models[sel].ID
-	if is1M[sel] {
-		model += "[1m]"
-	}
-	return model, true
+	return presets.ApplyModelSelection(slot, models[sel].ID, is1M[sel]), true
 }
 
 // fetchAndPickModel 从供应商 API 拉取模型列表并让用户选一个。
 // 返回选中模型 ID；用户取消返回 ("", nil)；失败返回 ("", err)（由表单 Status 展示）。
-func fetchAndPickModel(t *Terminal, w *workCopy, catalog []presets.Preset, title string) (string, error) {
+func fetchAndPickModel(t *Terminal, w *workCopy, catalog []presets.Preset, slot, title string) (string, error) {
 	if strings.TrimSpace(w.base) == "" || strings.TrimSpace(w.token) == "" {
 		return "", errors.New(i18n.T("models.needBaseKey"))
 	}
@@ -151,12 +157,16 @@ func fetchAndPickModel(t *Terminal, w *workCopy, catalog []presets.Preset, title
 		endpoint = resolveModelsEndpoint(pp, w.base)
 	}
 	fmt.Printf("  %s\n", i18n.T("models.fetching"))
-	models, err := presets.FetchModels(w.base, w.token, endpoint)
+	models, err := presets.FetchModels(w.base, w.token, w.auth, endpoint)
 	if err != nil {
 		return "", err
 	}
-	items, is1M := buildModelItems(models, pp)
-	model, ok := pickFromList(t, models, items, is1M, title, i18n.T("models.hint"))
+	items, is1M := buildModelItems(models, pp, slot)
+	hint := i18n.T("models.hint")
+	if !presets.CanAttach1M(slot) {
+		hint = i18n.T("models.hintNoSuffix")
+	}
+	model, ok := pickFromList(t, models, items, is1M, slot, title, hint)
 	if !ok {
 		return "", nil
 	}
@@ -165,7 +175,7 @@ func fetchAndPickModel(t *Terminal, w *workCopy, catalog []presets.Preset, title
 
 // pickSlotModel 档位行的编辑入口：手动输入 / 从模型列表选择。
 // 返回是否变更与新值；失败返回 err（由表单 Status 展示，错误不再被清屏吞掉）。
-func pickSlotModel(t *Terminal, w *workCopy, catalog []presets.Preset, label, current string) (bool, string, error) {
+func pickSlotModel(t *Terminal, w *workCopy, catalog []presets.Preset, slot, label, current string) (bool, string, error) {
 	cur := current
 	if cur == "" {
 		cur = i18n.T("empty.paren")
@@ -179,7 +189,7 @@ func pickSlotModel(t *Terminal, w *workCopy, catalog []presets.Preset, label, cu
 		ch, val := ReadValue(t, strings.TrimSpace(label), current, false)
 		return ch, val, nil
 	}
-	model, err := fetchAndPickModel(t, w, catalog, i18n.T("models.pickTitle"))
+	model, err := fetchAndPickModel(t, w, catalog, slot, i18n.T("models.pickTitle"))
 	if err != nil {
 		return false, current, err
 	}
@@ -311,28 +321,28 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 				w.token = val
 			}
 		case "opus":
-			if ch, val, err := pickSlotModel(t, &w, catalog, strings.TrimSpace(i18n.T("edit.field.opus")), w.opus); err != nil {
+			if ch, val, err := pickSlotModel(t, &w, catalog, slotOpus, strings.TrimSpace(i18n.T("edit.field.opus")), w.opus); err != nil {
 				status = i18n.T("models.fail", err)
 			} else if ch {
 				w.opus = val
 				status = ""
 			}
 		case "sonnet":
-			if ch, val, err := pickSlotModel(t, &w, catalog, strings.TrimSpace(i18n.T("edit.field.sonnet")), w.sonnet); err != nil {
+			if ch, val, err := pickSlotModel(t, &w, catalog, slotSonnet, strings.TrimSpace(i18n.T("edit.field.sonnet")), w.sonnet); err != nil {
 				status = i18n.T("models.fail", err)
 			} else if ch {
 				w.sonnet = val
 				status = ""
 			}
 		case "haiku":
-			if ch, val, err := pickSlotModel(t, &w, catalog, strings.TrimSpace(i18n.T("edit.field.haiku")), w.haiku); err != nil {
+			if ch, val, err := pickSlotModel(t, &w, catalog, slotHaiku, strings.TrimSpace(i18n.T("edit.field.haiku")), w.haiku); err != nil {
 				status = i18n.T("models.fail", err)
 			} else if ch {
 				w.haiku = val
 				status = ""
 			}
 		case "fable":
-			if ch, val, err := pickSlotModel(t, &w, catalog, strings.TrimSpace(i18n.T("edit.field.fable")), w.fable); err != nil {
+			if ch, val, err := pickSlotModel(t, &w, catalog, slotFable, strings.TrimSpace(i18n.T("edit.field.fable")), w.fable); err != nil {
 				status = i18n.T("models.fail", err)
 			} else if ch {
 				w.fable = val

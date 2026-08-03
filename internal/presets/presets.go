@@ -54,10 +54,10 @@ type Preset struct {
 // 第三方供应商绝不预置 `[1m]`（见 plan §3.1.1）。
 var BuiltinPresets = []Preset{
 	{
-		Name:   "DeepSeek",
-		Auth:   AuthToken,
-		Effort: "max",
-		URLs:   []URL{{Label: "Anthropic 兼容", URL: "https://api.deepseek.com/anthropic"}},
+		Name:      "DeepSeek",
+		Auth:      AuthToken,
+		Effort:    "max",
+		URLs:      []URL{{Label: "Anthropic 兼容", URL: "https://api.deepseek.com/anthropic"}},
 		Models:    Models{Opus: "deepseek-v4-pro", Sonnet: "deepseek-v4-pro", Haiku: "deepseek-v4-flash"},
 		ModelsAPI: "https://api.deepseek.com/models", // Anthropic 兼容端点未实现 /v1/models，模型列表在 OpenAI 风格端点
 		Models1M:  []string{"deepseek-v4-pro"},
@@ -83,7 +83,7 @@ var BuiltinPresets = []Preset{
 		Models: Models{Opus: "mimo-v2.5-pro", Sonnet: "mimo-v2.5-pro", Haiku: "mimo-v2.5-pro"},
 		// MiMo 的 models 端点是 OpenAI 风格 /v1/models（不带 /anthropic 前缀），按 base 前缀匹配各自端点
 		ModelsAPIMap: map[string]string{
-			"https://api.xiaomimimo.com/anthropic":            "https://api.xiaomimimo.com/v1/models",
+			"https://api.xiaomimimo.com/anthropic":           "https://api.xiaomimimo.com/v1/models",
 			"https://token-plan-cn.xiaomimimo.com/anthropic": "https://token-plan-cn.xiaomimimo.com/v1/models",
 		},
 		Models1M: []string{"mimo-v2.5-pro"},

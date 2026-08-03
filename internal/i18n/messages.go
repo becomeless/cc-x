@@ -97,8 +97,8 @@ var messages = map[string]msg{
 		zh: "供应商：选后自动填地址/模型 · 备注随便写 · 回车=不改 · 输入 - =清空",
 		en: `Provider: auto-fills url/models · Enter=keep · type "-" to clear`,
 	},
-	"edit.current":              {zh: "当前：{0}", en: "current: {0}"},
-	"edit.inputHint":            {zh: "回车=不改，输入=替换，- =清空", en: `Enter=keep, type=replace, "-"=clear`},
+	"edit.current":   {zh: "当前：{0}", en: "current: {0}"},
+	"edit.inputHint": {zh: "回车=不改，输入=替换，- =清空", en: `Enter=keep, type=replace, "-"=clear`},
 	// 标签不带尾部空格：表单里按显示宽度统一补齐（edit.go 的 labelW），冒号列对齐。
 	"edit.field.provider":       {zh: "供应商", en: "Provider"},
 	"edit.field.note":           {zh: "备注", en: "Note"},
@@ -147,6 +147,7 @@ var messages = map[string]msg{
 	"models.fetching":     {zh: "获取模型列表中…", en: "Fetching models…"},
 	"models.fail":         {zh: "获取模型列表失败：{0}", en: "Failed to fetch models: {0}"},
 	"models.hint":         {zh: "[1M] = 支持 1M 上下文，选中自动加 [1m] 后缀", en: "[1M] = 1M context, auto [1m] suffix on select"},
+	"models.hintNoSuffix": {zh: "从模型列表选择（该档位不附加 [1m] 后缀）", en: "Pick from list (no [1m] suffix for this tier)"},
 	"models.pickManual":   {zh: "手动输入…", en: "Enter manually…"},
 	"models.pickFromList": {zh: "从模型列表选择…（需已填 API 地址和密钥）", en: "Pick from model list… (API URL & key required)"},
 	"models.pickTitle":    {zh: "从模型列表选择（↑↓ 选择 · Enter 确认 · q 取消）", en: "Pick from model list (↑↓ · Enter · q cancel)"},

@@ -14,22 +14,72 @@ export interface ModelInfo {
   displayName?: string;
 }
 
+/** 认证方式（与编辑表单的 auth 选择一致；决定模型列表请求携带哪个认证头）。 */
+export type AuthMode = 'AUTH_TOKEN' | 'API_KEY';
+
+/** 模型档位：四个固定模型映射档位行。 */
+export type ModelSlot = 'opus' | 'sonnet' | 'haiku' | 'fable';
+
+/** 档位是否允许自动附加 [1m] 后缀：官方文档仅为 opus/sonnet 映射变量说明 [1m]，因此 haiku/fable 不自动附加。 */
+export function canAttach1M(slot: ModelSlot): boolean {
+  return slot === 'opus' || slot === 'sonnet';
+}
+
+/** 从模型列表选中一个模型后的落值：允许附加且命中 1M 表时加 [1m] 后缀（已带后缀则幂等不重复）。
+ *  纯函数，便于矩阵单测（对齐 Go 版 presets.ApplyModelSelection）。 */
+export function applyModelSelection(slot: ModelSlot, modelId: string, supports1M: boolean): string {
+  if (!canAttach1M(slot) || !supports1M) return modelId;
+  return modelId.replace(/\[1m\]$/, '') + '[1m]';
+}
+
 const MODELS_TIMEOUT_MS = 10_000;
 
-/** 拉取模型列表。baseUrl 是 Anthropic 兼容端点，apiKey 是认证令牌。endpoint 为空时推导。 */
-export async function fetchModels(baseUrl: string, apiKey: string, endpoint?: string): Promise<ModelInfo[]> {
+/** 模型列表响应上限（对齐 Go 版 LimitReader 的 1 MiB；防御异常/恶意端点的大响应）。 */
+const MAX_RESPONSE_BYTES = 1 << 20;
+
+/** 流式读取响应体为 UTF-8 文本；累计超过 MAX_RESPONSE_BYTES 时取消响应并明确报错。
+ *  不检查 Content-Length（chunked 响应可以不带它），必须逐块累计。 */
+async function readLimitedText(res: Response, limit: number): Promise<string> {
+  if (!res.body) return '';
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder('utf-8');
+  let text = '';
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel();
+      throw new Error('响应超过 1 MiB，已拒绝');
+    }
+    text += decoder.decode(value, { stream: true });
+  }
+  return text + decoder.decode();
+}
+
+/** 拉取模型列表。baseUrl 是 Anthropic 兼容端点，token 是认证凭据（Bearer token 或 API key），
+ *  auth 决定携带哪个认证头——与编辑表单的 auth 选择一致，也即 Claude Code 实际调用时使用的头。
+ *  endpoint 为空时推导 {base}/v1/models。3xx 重定向一律拒绝：模型列表端点不应重定向，
+ *  且跨主机重定向会泄露认证头（浏览器/Go 的敏感头剥离列表都不含 x-api-key）。 */
+export async function fetchModels(baseUrl: string, token: string, auth: AuthMode, endpoint?: string): Promise<ModelInfo[]> {
   const url = endpoint?.trim() || `${baseUrl.replace(/\/+$/, '')}/v1/models`;
+  const headers: Record<string, string> = {
+    'User-Agent': 'ccx',
+    'anthropic-version': '2023-06-01',
+  };
+  if (auth === 'API_KEY') headers['x-api-key'] = token;
+  else headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(url, {
     method: 'GET',
-    headers: {
-      // 双认证头都带上：Anthropic 官方认 x-api-key，国产中转一般认 Authorization: Bearer。
-      Authorization: `Bearer ${apiKey}`,
-      'x-api-key': apiKey,
-      'User-Agent': 'ccx',
-    },
+    headers,
+    redirect: 'manual',
     signal: AbortSignal.timeout(MODELS_TIMEOUT_MS),
   });
-  const body = await res.text();
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error(`模型列表端点发生重定向，已拒绝：${res.headers.get('location') ?? '未知地址'}`);
+  }
+  const body = await readLimitedText(res, MAX_RESPONSE_BYTES);
   if (!res.ok) {
     throw new Error(`HTTP ${res.status}: ${extractErrMsg(body)}（${url}）`);
   }

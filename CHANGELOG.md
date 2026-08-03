@@ -1,5 +1,13 @@
 # 更新日志
 
+## v0.4.23 — 未发布
+
+- 修复：`[1m]` 后缀仅 opus/sonnet 档自动附加——模型列表选择改由档位感知（`applyModelSelection` / `CanAttach1M`），haiku/fable 档不再附加（官方文档仅 `ANTHROPIC_DEFAULT_OPUS_MODEL` / `ANTHROPIC_DEFAULT_SONNET_MODEL` 文档化支持 `[1m]`；Claude Code 内部 quota probe 等路径仍会字面发送带后缀模型名导致 404）（Go / TypeScript 双版本对齐，含 4 档 × 2 状态矩阵单测）
+- 修复：模型列表请求只发配置对应的一种认证头——`fetchModels` 增加 auth 参数（AUTH_TOKEN → `Authorization: Bearer`，API_KEY → `x-api-key`），与连通性检查一致，不再双头齐发；补 `anthropic-version` 头；3xx 重定向一律拒绝（跨主机重定向会泄露认证头——Go/undici 的敏感头剥离列表都不含 `x-api-key`）；响应体上限 1 MiB，超限取消并明确报错（对齐 Go 版 LimitReader 资源边界）（Go / TypeScript 双版本对齐，含请求头/重定向/大响应单测）
+- 修复：`~/.claude.json` 新建文件权限 0600——TS 版原子写 temp 显式 `mode 0o600`（与 Go `CreateTemp` 对齐）且改为随机临时名 + `flag:'wx'` 独占创建（不复用 PID 重用/崩溃残留的同名文件、不跟随预置符号链接），失败清理先恢复可写再 unlink 且两步独立执行（Windows 上 temp 被 chmod 成只读后直接删除会残留）；删除 POSIX 不可靠的「只读文件报错」测试（rename 取决于父目录权限，root/容器会绕过），补新建 0600 / 保留原权限 / Windows 失败清理测试（Go / TypeScript 双版本对齐）
+- 修复：原子写「保留原权限」失败边界——原文件已存在时，stat 读取原权限或 chmod 复制权限失败（权限/IO 错误）不再吞错继续 rename，而是终止写入、清理临时文件并保留原文件不动；仅「原文件不存在」（ENOENT / `fs.ErrNotExist`，首次新建场景）允许跳过权限复制。此前这两类错误被吞掉，会带着错误权限位继续替换原文件（Go / TypeScript 双版本对齐）
+- 测试：302 重定向拒绝用例补 `Location` 响应头与具体地址断言——此前测试名声称「报错带地址」但响应未设置 Location、断言只匹配「重定向」（`fetchModels` 实现本就读取 location 进错误消息，补测试使声称与实际一致）
+
 ## v0.4.22 — 2026-08-02
 
 - 修复：原子写失败清理临时文件——`claudecfg.ts` 的 `writeAtomic` 与 `update` 缓存写（Go + TS）在写入或 rename 失败时清理 `.tmp` 残留，与 Go 版 `defer` 清理语义完全对齐，不留孤儿文件（Go / TypeScript 双版本对齐）

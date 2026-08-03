@@ -1,13 +1,15 @@
 /**
  * 对 ~/.claude.json 的受控访问。
- * 铁律：ccx 从不写 Claude Code 配置文件。唯一豁免（用户主动触发的主菜单「一键免登录」）：
- * 把顶层布尔字段 hasCompletedOnboarding 写为 true——字符串级字节最小修改，绝不整文件 JSON 重排，
- * 文件不合法 JSON 时拒绝写入。除此外仍只读不写。
+ * 配置边界：API、密钥、模型映射、MCP、插件、Hooks 等配置绝不由 ccx 写入。
+ * 唯一允许的写入是用户主动触发主菜单「一键免登录」时，把顶层布尔字段
+ * hasCompletedOnboarding 写为 true——字符串级字节最小原子修改，绝不整文件 JSON 重排，
+ * 文件不合法 JSON 时拒绝写入。不得扩展此例外。
  *
  * 实现必须用 Buffer 字节操作（readFileSync 不带 encoding），绝不用字符串：字符串解码会把非法字节
  * 替换成 U+FFFD、且 JS 字符串索引是 UTF-16 码元与字节偏移不一致，重写会污染文件。与 Go 版
  * internal/claudecfg/onboarding.go 逐字节对齐。
  */
+import { randomBytes } from 'node:crypto';
 import { chmodSync, readFileSync, realpathSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -211,19 +213,33 @@ function firstNonSpaceAt(buf: Buffer): number {
   return i;
 }
 
-/** 同目录 temp + rename 原子写；已存在时保留原权限位（Windows 上 chmod 仅只读位，可忽略）。
- * 任何失败（write/chmod/rename）都清理 temp，等价 Go 版 atomicWrite 的 defer 清理，不留孤儿文件。 */
+/** 同目录 temp + rename 原子写；新建文件固定 0600（敏感配置文件，不可被其他本机用户读取），
+ * 已存在时保留原权限位（Windows 上 chmod 仅只读位，可忽略）。与 Go 版 atomicWrite
+ * （CreateTemp 默认 0600 + O_EXCL 独占创建 + 已存在时 Chmod 原权限 + defer 清理）逐行对齐。
+ * 临时名随机（非 PID 可预测）+ flag:'wx' 独占创建：不会复用 PID 重用/崩溃残留的同名旧文件，
+ * 也不会跟随预先存在的符号链接。任何失败（write/chmod/rename）都清理 temp，不留孤儿文件；
+ * 清理先 chmod 恢复可写再 unlink，且两步骤独立执行——chmod 失败不阻挡 unlink
+ * （失败路径上 temp 可能已被 chmod 成原文件只读位，Windows 上直接 unlink 只读文件会失败残留）。
+ * 注：POSIX 上原子替换可以覆盖只读目标（rename 取决于父目录权限），但会保留其权限位；
+ * Windows 上替换是否成功取决于目标文件属性与占用状态。 */
 function writeAtomic(path: string, data: Buffer): void {
-  const tmp = `${path}.tmp-${process.pid}`;
+  const tmp = `${path}.tmp-${randomBytes(6).toString('hex')}`;
   try {
-    writeFileSync(tmp, data);
+    writeFileSync(tmp, data, { mode: 0o600, flag: 'wx' });
+    let originalMode: number | undefined;
     try {
-      chmodSync(tmp, statSync(path).mode);
-    } catch {
-      // 原文件不存在或 chmod 失败：跳过
+      originalMode = statSync(path).mode & 0o777;
+    } catch (e) {
+      if (!isErrnoException(e, 'ENOENT')) throw e;
     }
+    if (originalMode !== undefined) chmodSync(tmp, originalMode);
     renameSync(tmp, path);
   } catch (e) {
+    try {
+      chmodSync(tmp, 0o600);
+    } catch {
+      // chmod 失败也继续尝试 unlink（恢复可写只是手段，删除仍是目标）
+    }
     try {
       unlinkSync(tmp);
     } catch {
@@ -231,4 +247,8 @@ function writeAtomic(path: string, data: Buffer): void {
     }
     throw e;
   }
+}
+
+function isErrnoException(e: unknown, code: string): boolean {
+  return typeof e === 'object' && e !== null && 'code' in e && (e as NodeJS.ErrnoException).code === code;
 }

@@ -1,6 +1,8 @@
 package presets
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
@@ -87,7 +89,7 @@ func TestSupports1M(t *testing.T) {
 		{"deepseek-v4-pro[1m]", true},
 		{"deepseek-v4-flash", false},
 		{"glm-5.2", true},
-		{"GLM-5.2", true},    // 大小写不敏感（API 可能返回大写）
+		{"GLM-5.2", true},     // 大小写不敏感（API 可能返回大写）
 		{"GLM-5.2[1m]", true}, // 大写 + 后缀
 		{"glm-5.2-air", true}, // 前缀匹配
 		{"mimo-v2.5-pro", false},
@@ -100,4 +102,112 @@ func TestSupports1M(t *testing.T) {
 	if Supports1M(nil, "deepseek-v4-pro") {
 		t.Error("nil preset 应返回 false")
 	}
+}
+
+// TestCanAttach1M：仅 opus/sonnet 档允许自动附加 [1m]。
+func TestCanAttach1M(t *testing.T) {
+	cases := map[string]bool{
+		"opus":   true,
+		"sonnet": true,
+		"haiku":  false,
+		"fable":  false,
+	}
+	for slot, want := range cases {
+		if got := CanAttach1M(slot); got != want {
+			t.Errorf("CanAttach1M(%q) = %v, want %v", slot, got, want)
+		}
+	}
+}
+
+// TestApplyModelSelection：4 档 × 支持/不支持 1M + 已带后缀幂等。
+func TestApplyModelSelection(t *testing.T) {
+	cases := []struct {
+		name       string
+		slot       string
+		modelID    string
+		supports1M bool
+		want       string
+	}{
+		{"opus 命中", "opus", "glm-5.2", true, "glm-5.2[1m]"},
+		{"opus 未命中", "opus", "glm-5.2-air", false, "glm-5.2-air"},
+		{"sonnet 命中", "sonnet", "deepseek-v4-pro", true, "deepseek-v4-pro[1m]"},
+		{"sonnet 未命中", "sonnet", "deepseek-v4-flash", false, "deepseek-v4-flash"},
+		{"haiku 命中也不附加", "haiku", "glm-5.2", true, "glm-5.2"},
+		{"fable 命中也不附加", "fable", "glm-5.2", true, "glm-5.2"},
+		{"已带后缀幂等", "opus", "glm-5.2[1m]", true, "glm-5.2[1m]"},
+	}
+	for _, c := range cases {
+		if got := ApplyModelSelection(c.slot, c.modelID, c.supports1M); got != c.want {
+			t.Errorf("%s: ApplyModelSelection(%q, %q, %v) = %q, want %q", c.name, c.slot, c.modelID, c.supports1M, got, c.want)
+		}
+	}
+}
+
+// TestFetchModelsAuthHeaderAndRedirect：只发配置对应的一种认证头（带 anthropic-version），
+// 3xx 重定向一律拒绝。
+func TestFetchModelsAuthHeaderAndRedirect(t *testing.T) {
+	t.Run("AUTH_TOKEN 只发 Authorization", func(t *testing.T) {
+		var gotAuth, gotKey, gotVer string
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotAuth = r.Header.Get("Authorization")
+			gotKey = r.Header.Get("x-api-key")
+			gotVer = r.Header.Get("anthropic-version")
+			w.Write([]byte(`{"data":[{"id":"m"}]}`))
+		}))
+		defer srv.Close()
+		if _, err := FetchModels(srv.URL, "t", AuthToken, ""); err != nil {
+			t.Fatalf("FetchModels: %v", err)
+		}
+		if gotAuth != "Bearer t" || gotKey != "" {
+			t.Fatalf("AUTH_TOKEN 应只发 Authorization: Bearer t，实际 Authorization=%q x-api-key=%q", gotAuth, gotKey)
+		}
+		if gotVer == "" {
+			t.Fatal("应携带 anthropic-version 头")
+		}
+	})
+
+	t.Run("API_KEY 只发 x-api-key", func(t *testing.T) {
+		var gotAuth, gotKey string
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotAuth = r.Header.Get("Authorization")
+			gotKey = r.Header.Get("x-api-key")
+			w.Write([]byte(`{"data":[{"id":"m"}]}`))
+		}))
+		defer srv.Close()
+		if _, err := FetchModels(srv.URL, "k", AuthAPIKey, ""); err != nil {
+			t.Fatalf("FetchModels: %v", err)
+		}
+		if gotKey != "k" || gotAuth != "" {
+			t.Fatalf("API_KEY 应只发 x-api-key: k，实际 x-api-key=%q Authorization=%q", gotKey, gotAuth)
+		}
+	})
+
+	t.Run("302 重定向拒绝", func(t *testing.T) {
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "https://example.com/other", http.StatusFound)
+		}))
+		defer srv.Close()
+		_, err := FetchModels(srv.URL, "k", AuthAPIKey, "")
+		if err == nil {
+			t.Fatal("重定向应报错")
+		}
+		if !strings.Contains(err.Error(), "重定向") || !strings.Contains(err.Error(), "example.com") {
+			t.Fatalf("错误应含重定向与目标地址: %v", err)
+		}
+	})
+
+	t.Run("响应超过 1 MiB 拒绝", func(t *testing.T) {
+		big := make([]byte, 2<<20)
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, _ = w.Write(big)
+		}))
+		defer srv.Close()
+		_, err := FetchModels(srv.URL, "k", AuthAPIKey, "")
+		if err == nil {
+			t.Fatal("大响应应报错")
+		}
+		if !strings.Contains(err.Error(), "超过 1 MiB") {
+			t.Fatalf("错误应含超限信息: %v", err)
+		}
+	})
 }

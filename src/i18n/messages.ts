@@ -155,6 +155,7 @@ export const messages: Record<string, Msg> = {
   'models.fetching': { zh: '获取模型列表中…', en: 'Fetching models…' },
   'models.fail': { zh: '获取模型列表失败：{0}', en: 'Failed to fetch models: {0}' },
   'models.hint': { zh: '[1M] = 支持 1M 上下文，选中自动加 [1m] 后缀', en: '[1M] = 1M context, auto [1m] suffix on select' },
+  'models.hintNoSuffix': { zh: '从模型列表选择（该档位不附加 [1m] 后缀）', en: 'Pick from list (no [1m] suffix for this tier)' },
   'models.pickManual': { zh: '手动输入…', en: 'Enter manually…' },
   'models.pickFromList': { zh: '从模型列表选择…（需已填 API 地址和密钥）', en: 'Pick from model list… (API URL & key required)' },
   'models.pickTitle': { zh: '从模型列表选择（↑↓ 选择 · Enter 确认 · q 取消）', en: 'Pick from model list (↑↓ · Enter · q cancel)' },

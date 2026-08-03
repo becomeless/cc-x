@@ -140,9 +140,9 @@ CC-X 的边界比功能更重要。它只做一件事：**切 API**。
 
 > CC-X 的边界比功能更重要。
 
-Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"——它只站在进程启动前那一小步：把 10 个受管环境变量准备好，然后让 Claude Code 自己工作。不写配置文件，不接管 MCP，不做后台常驻管理；能让用户显式选择，就不替用户自动决定。
+Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"——它只站在进程启动前那一小步：把 10 个受管环境变量准备好，然后让 Claude Code 自己工作。API 地址、密钥和模型映射只走环境变量，不写进 Claude Code 配置；不接管 MCP、插件、Hooks，不做后台常驻管理。
 
-欢迎 Issue / PR，但方向很明确：**让切换更稳、更清楚、更不打扰用户**，比堆更多管理能力更重要。任何会写 Claude Code 配置文件的改动都不会被接受——唯一例外是主菜单「一键免登录」：用户主动点击时把 `~/.claude.json` 顶层 `hasCompletedOnboarding` 写为 `true`（字节级最小修改，只动这一个字段）。
+欢迎 Issue / PR，但方向很明确：**让切换更稳、更清楚、更不打扰用户**，比堆更多管理能力更重要。唯一允许的 Claude Code 配置写入是用户主动触发「一键免登录」时，把 `~/.claude.json` 顶层 `hasCompletedOnboarding` 设为 `true`：字节级最小原子修改，非法 JSON 拒写。这个例外不能扩展到 API、密钥、模型映射、MCP、插件、Hooks 或其它行为配置。
 
 ---
 
@@ -154,8 +154,8 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 |---|---|---|
 | 形态 | 终端命令（轻量） | 桌面 GUI（全能） |
 | 职责 | 只切 API | API + MCP + 多 CLI + 提示词… |
-| 改配置文件？ | **不碰**（纯环境变量） | 会重写 |
-| 能弄丢 MCP？ | **不可能** | 有用户反馈被覆盖 |
+| API / 模型配置 | **不写配置文件**（纯环境变量） | 会写入自己的配置体系 |
+| Claude 配置边界 | 不管理 MCP/插件/Hooks；仅用户主动免登录时最小修改一个 onboarding 布尔字段 | 覆盖范围更广 |
 | 多终端并行 | **原生支持**（进程隔离） | 全局切换，容易互扰 |
 
 - → **CC-X**：命令行党、常多开终端、被切配置坑过、只想要「切 API」一件事
@@ -176,7 +176,7 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 | sonnet → 模型 | `ANTHROPIC_DEFAULT_SONNET_MODEL` | |
 | haiku → 模型 | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
 | fable → 模型 | `ANTHROPIC_DEFAULT_FABLE_MODEL` | 最强档（如 Fable 5）；供应商没这档就留空 |
-| 子代理 → 模型 | `CLAUDE_CODE_SUBAGENT_MODEL` | 子代理/agent teams 用模型；**留空=官方默认（继承主模型）**。想省钱可填 `haiku`（别名，跟随本配置的 haiku 档）或具体模型名 |
+| 子代理 → 模型 | `CLAUDE_CODE_SUBAGENT_MODEL` | 子代理/agent teams 用模型；**留空=不强制覆盖，未另行指定时继承主模型（Inherit）**。想省钱可填 `haiku`（别名，跟随本配置的 haiku 档）或具体模型名 |
 | effort 思考档 | `CLAUDE_CODE_EFFORT_LEVEL` | `low` ~ `max`；`auto`=模型默认；留空=不设。第三方不一定生效 |
 | 禁用非核心流量 | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1`=禁用 Claude Code 非核心流量；留空=不设。GLM 预置为 `1` |
 
@@ -199,13 +199,13 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 | 小米MiMo | `https://api.xiaomimimo.com/anthropic` | `mimo-v2.5-pro` | `mimo-v2.5-pro` | — | — |
 
 > 模型名随各家更新而变，以供应商官方接入文档为准。小米有按量付费和 TokenPlan 两个地址，选供应商时会让你挑。
-> 四个模型档位行（opus/sonnet/haiku/fable）编辑时可选「从模型列表选择」——从供应商 API 拉取实际可用模型，支持 1M 的模型（如 `deepseek-v4-pro`、`glm-5.2`、`mimo-v2.5-pro`）标 `[1M]` 并自动附 `[1m]` 后缀，无需手敲；失败回退手动输入。
+> 四个模型档位行（opus/sonnet/haiku/fable）编辑时可选「从模型列表选择」——从供应商 API 拉取实际可用模型；**仅 opus/sonnet 档**命中 1M 支持表（如 `deepseek-v4-pro`、`glm-5.2`、`mimo-v2.5-pro`）的模型标 `[1M]` 并自动附 `[1m]` 后缀（官方文档仅这两个映射变量支持 `[1m]`），haiku/fable 档不附加；失败回退手动输入。
 
 ### 进阶
 
 - **多账号**：同一家建多份配置，名称自动追加「 2」「 3」…用**备注**区分，列表显示为「供应商 — 备注」。
 - **自定义供应商**：`presets.json` 是供应商目录，加一个 JSON 条目就多一个供应商，无需改代码。可在 `~/.cc-mini/presets.json` 放自定义版覆盖随工具发布的版本。
-- **第三方首次弹登录**：主菜单「一键免登录」把 `~/.claude.json` 的 `hasCompletedOnboarding` 写为 `true`（官方推荐的免登录方式，mimo 接入文档同款做法），下次启动 Claude Code 不再弹登录引导；不合法时拒绝写入并提示。这是 CC-X 写 Claude Code 配置文件的唯一例外，只动这一个字段。
+- **第三方首次弹登录**：主菜单「一键免登录」把 `~/.claude.json` 的 `hasCompletedOnboarding` 写为 `true`（官方推荐的免登录方式，mimo 接入文档同款做法），下次启动 Claude Code 不再弹登录引导；不合法时拒绝写入并提示。这是 CC-X 唯一允许的 Claude Code 配置写入，只动这一个顶层布尔字段，绝不写入 API、密钥、模型映射、MCP、插件或 Hooks 配置。
 - **更新检查**：主菜单可切「提醒」模式，新版本出现时菜单顶部黄字提示升级命令。每天最多查一次，不自动升级。
 
 ---
@@ -219,7 +219,7 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
   - Unix → shell 启动文件 `# >>> xx >>>` … `# <<< xx <<<` 标记块（幂等重写，按 `$SHELL` 选文件）
   - 语义一致：**只影响新终端**；切到「官方」会清除全部受管变量
 
-CC-X 只动这 10 个「受管」环境变量，切换时清掉目标不用的：
+API 切换只动这 10 个「受管」环境变量，切换时清掉目标不用的：
 `ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_API_KEY`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`ANTHROPIC_DEFAULT_FABLE_MODEL`、`CLAUDE_CODE_SUBAGENT_MODEL`、`CLAUDE_CODE_EFFORT_LEVEL`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`。
 
 > 💡 需要改 `settings.json`？直接用 Claude Code 的 `/update-config` 说需求（如"允许 npm 命令"），比让外部工具改可靠。

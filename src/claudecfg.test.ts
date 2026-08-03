@@ -3,7 +3,7 @@
  * 断言全部走逐字节 Buffer 比对（readFileSync 不带 encoding）。
  */
 import assert from 'node:assert/strict';
-import { chmodSync, mkdtempSync, readFileSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdtempSync, readdirSync, readFileSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
@@ -115,14 +115,34 @@ test('markOnboardingDone 符号链接本体不被替换', { skip: process.platfo
   assert.equal(statSync(link).isSymbolicLink(), true, '符号链接本体被替换成了普通文件');
 });
 
-test('markOnboardingDone 只读文件报错且不改', () => {
+// POSIX 上原子替换可以覆盖只读目标（rename 取决于父目录权限），所以「只读文件应报错」的断言
+// 只对 Windows 成立；Windows 上只读目标使 rename 失败，正好覆盖「失败清理 temp + 原文件不变」。
+test('markOnboardingDone 新建文件权限 0600', { skip: process.platform === 'win32' }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ccx-claudecfg-'));
+  const p = join(dir, '.claude.json');
+  assert.equal(markOnboardingDoneIn(p), undefined);
+  const mode = statSync(p).mode & 0o777;
+  assert.equal(mode, 0o600, `新建文件权限应为 0600，实际 ${mode.toString(8)}`);
+});
+
+test('markOnboardingDone 保留原文件权限', { skip: process.platform === 'win32' }, () => {
+  const dir = mkdtempSync(join(tmpdir(), 'ccx-claudecfg-'));
+  const p = join(dir, '.claude.json');
+  writeFileSync(p, '{"hasCompletedOnboarding":false}', { mode: 0o640 });
+  assert.equal(markOnboardingDoneIn(p), undefined);
+  const mode = statSync(p).mode & 0o777;
+  assert.equal(mode, 0o640, `已存在文件应保留原权限 0640，实际 ${mode.toString(8)}`);
+});
+
+// Windows：只读目标使 rename 失败 → 报错 + temp 清理 + 原文件不变（POSIX rename 依赖父目录权限，跳过）。
+test('markOnboardingDone 写失败清理 temp 且原文件不变', { skip: process.platform !== 'win32' }, () => {
   const dir = mkdtempSync(join(tmpdir(), 'ccx-claudecfg-'));
   const p = join(dir, '.claude.json');
   writeFileSync(p, '{"hasCompletedOnboarding":false}');
-  if (process.platform !== 'win32') chmodSync(p, 0o444); // Windows 上只读位不阻止写
+  chmodSync(p, 0o444); // 只读属性使 Windows 上的 rename 失败
   const err = markOnboardingDoneIn(p);
-  if (process.platform !== 'win32') {
-    assert.ok(err, '只读文件应报错');
-    assert.equal(readFileSync(p).toString(), '{"hasCompletedOnboarding":false}', '只读文件被改动');
-  }
+  assert.ok(err, '应报错');
+  const leftovers = readdirSync(dir).filter((f) => f.includes('.tmp-'));
+  assert.equal(leftovers.length, 0, `temp 未清理: ${leftovers.join(', ')}`);
+  assert.equal(readFileSync(p).toString(), '{"hasCompletedOnboarding":false}', '原文件被改动');
 });

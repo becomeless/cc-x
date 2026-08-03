@@ -4,7 +4,14 @@
  * 新需求（plan §7）：密钥行默认掩码 `********`，提供「👁 显示/隐藏密钥明文」开关——
  * 仅影响本表单的**显示**，不改数据、不持久化；默认隐藏防肩窥。输入态（readValue secret）另算。
  */
-import { fetchModels, supports1M, type ModelInfo } from '../config/models.js';
+import {
+  applyModelSelection,
+  canAttach1M,
+  fetchModels,
+  supports1M,
+  type ModelInfo,
+  type ModelSlot,
+} from '../config/models.js';
 import {
   buildProviderEnv,
   getProviderEnvMap,
@@ -39,7 +46,7 @@ function findPreset(catalog: Preset[], name: string): Preset | undefined {
   return catalog.find((p) => p.name === name);
 }
 
-/** 子代理行为空时显示「默认」（官方默认=继承主模型），不显示 (空)。 */
+/** 子代理行为空时显示「默认」（不强制覆盖；未另行指定时继承主模型），不显示 (空)。 */
 function subagentLabel(v: string): string {
   return v.trim() === '' ? T('edit.default') : v;
 }
@@ -75,10 +82,10 @@ function resolveModelsEndpoint(pp: Preset | undefined, baseUrl: string): string 
   return pp.modelsApi;
 }
 
-/** 构建模型列表菜单条目与 1M 标记（命中供应商 1M 表的标 [1M]）。对齐 Go 版 buildModelItems。
+/** 构建模型列表菜单条目与 1M 标记（仅 opus/sonnet 档命中供应商 1M 表才标 [1M]）。对齐 Go 版 buildModelItems。
  *  有 display_name 且与 ID 不同时显示「友好名 (实际ID)」——主标签可读，括号里是选中后真正填入的值。 */
-function buildModelItems(models: ModelInfo[], pp: Preset | undefined): { items: string[]; is1M: boolean[] } {
-  const is1M = models.map((m) => supports1M(pp, m.id));
+function buildModelItems(models: ModelInfo[], pp: Preset | undefined, slot: ModelSlot): { items: string[]; is1M: boolean[] } {
+  const is1M = models.map((m) => canAttach1M(slot) && supports1M(pp, m.id));
   const items = models.map((m, i) => {
     let label = m.id;
     if (m.displayName && m.displayName !== m.id) {
@@ -90,11 +97,13 @@ function buildModelItems(models: ModelInfo[], pp: Preset | undefined): { items: 
   return { items, is1M };
 }
 
-/** 从已拉取的模型列表选一个；命中 1M 表自动附加 [1m] 后缀（想用 200K 可在表单行手动删）。取消返回 null。 */
+/** 从已拉取的模型列表选一个；opus/sonnet 档命中 1M 表自动附加 [1m] 后缀（想用 200K 可在表单行手动删）。
+ *  haiku/fable 档永不附加。取消返回 null。 */
 async function pickFromList(
   models: ModelInfo[],
   items: string[],
   is1M: boolean[],
+  slot: ModelSlot,
   title: string,
   hint: string,
 ): Promise<string | null> {
@@ -102,18 +111,14 @@ async function pickFromList(
   if (sel < 0) return null;
   const picked = models[sel];
   if (!picked) return null;
-  let model = picked.id;
-  if (is1M[sel]) {
-    model += '[1m]';
-  }
-  return model;
+  return applyModelSelection(slot, picked.id, is1M[sel] ?? false);
 }
 
 /**
  * 从供应商 API 拉取模型列表并让用户选一个。返回选中模型 ID；用户取消返回 null；失败 throw
  * （由表单 Status 展示，错误不再被清屏吞掉）。
  */
-async function fetchAndPickModel(W: WorkCopy, catalog: Preset[], title: string): Promise<string | null> {
+async function fetchAndPickModel(W: WorkCopy, catalog: Preset[], slot: ModelSlot, title: string): Promise<string | null> {
   if (W.base.trim() === '' || W.token.trim() === '') {
     throw new Error(T('models.needBaseKey'));
   }
@@ -121,18 +126,19 @@ async function fetchAndPickModel(W: WorkCopy, catalog: Preset[], title: string):
   console.log(`  ${T('models.fetching')}`);
   let models: ModelInfo[];
   try {
-    models = await fetchModels(W.base, W.token, resolveModelsEndpoint(pp, W.base));
+    models = await fetchModels(W.base, W.token, W.auth, resolveModelsEndpoint(pp, W.base));
   } catch (err) {
     throw err instanceof Error ? err : new Error(String(err));
   }
-  const { items, is1M } = buildModelItems(models, pp);
-  return pickFromList(models, items, is1M, title, T('models.hint'));
+  const { items, is1M } = buildModelItems(models, pp, slot);
+  return pickFromList(models, items, is1M, slot, title, T(canAttach1M(slot) ? 'models.hint' : 'models.hintNoSuffix'));
 }
 
 /** 档位行的编辑入口：手动输入 / 从模型列表选择。失败 throw（由表单 Status 展示）。 */
 async function pickSlotModel(
   W: WorkCopy,
   catalog: Preset[],
+  slot: ModelSlot,
   label: string,
   current: string,
 ): Promise<{ changed: boolean; value: string }> {
@@ -143,7 +149,7 @@ async function pickSlotModel(
   if (sel === 0) {
     return readValue(label, current);
   }
-  const model = await fetchAndPickModel(W, catalog, T('models.pickTitle'));
+  const model = await fetchAndPickModel(W, catalog, slot, T('models.pickTitle'));
   if (model === null) return { changed: false, value: current };
   return { changed: true, value: model };
 }
@@ -251,7 +257,7 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
       }
       case 'opus': {
         try {
-          const r = await pickSlotModel(W, catalog, T('edit.field.opus').trim(), W.opus);
+          const r = await pickSlotModel(W, catalog, 'opus', T('edit.field.opus').trim(), W.opus);
           if (r.changed) {
             W.opus = r.value;
             status = '';
@@ -263,7 +269,7 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
       }
       case 'sonnet': {
         try {
-          const r = await pickSlotModel(W, catalog, T('edit.field.sonnet').trim(), W.sonnet);
+          const r = await pickSlotModel(W, catalog, 'sonnet', T('edit.field.sonnet').trim(), W.sonnet);
           if (r.changed) {
             W.sonnet = r.value;
             status = '';
@@ -275,7 +281,7 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
       }
       case 'haiku': {
         try {
-          const r = await pickSlotModel(W, catalog, T('edit.field.haiku').trim(), W.haiku);
+          const r = await pickSlotModel(W, catalog, 'haiku', T('edit.field.haiku').trim(), W.haiku);
           if (r.changed) {
             W.haiku = r.value;
             status = '';
@@ -287,7 +293,7 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
       }
       case 'fable': {
         try {
-          const r = await pickSlotModel(W, catalog, T('edit.field.fable').trim(), W.fable);
+          const r = await pickSlotModel(W, catalog, 'fable', T('edit.field.fable').trim(), W.fable);
           if (r.changed) {
             W.fable = r.value;
             status = '';

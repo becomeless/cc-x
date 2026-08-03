@@ -1,7 +1,7 @@
 {
   "name": "@cc-x/cc-x",
   "version": "0.4.22",
-  "description": "Claude Code API 切换器（命令 xx）：在官方账号与第三方 Anthropic 兼容 API 间切换，纯环境变量、不碰 Claude Code 配置文件。",
+  "description": "Claude Code API 切换器（命令 xx）：API、密钥与模型映射纯环境变量切换，不改写 MCP、插件或 Hooks 配置。",
   "keywords": [
     "claude",
     "claude-code",
@@ -48,7 +48,7 @@
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/check.test.ts src/runtime-info.test.ts src/claudecfg.test.ts",
+    "test": "node --import tsx --test src/check.test.ts src/runtime-info.test.ts src/claudecfg.test.ts src/config/models.test.ts",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

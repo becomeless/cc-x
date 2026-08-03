@@ -1,7 +1,8 @@
 // Package claudecfg 提供对 ~/.claude.json 的受控访问。
-// 铁律：ccx 从不写 Claude Code 配置文件。唯一豁免（用户主动触发的主菜单「一键免登录」）：
-// 把顶层布尔字段 hasCompletedOnboarding 写为 true——字符串级字节最小修改，绝不整文件 JSON 重排，
-// 文件不合法 JSON 时拒绝写入。除此外仍只读不写。
+// 配置边界：API、密钥、模型映射、MCP、插件、Hooks 等配置绝不由 ccx 写入。
+// 唯一允许的写入是用户主动触发主菜单「一键免登录」时，把顶层布尔字段
+// hasCompletedOnboarding 写为 true——字符串级字节最小原子修改，绝不整文件 JSON 重排，
+// 文件不合法 JSON 时拒绝写入。不得扩展此例外。
 package claudecfg
 
 import (
@@ -240,7 +241,11 @@ func isNumChar(c byte) bool {
 	return (c >= '0' && c <= '9') || c == '-' || c == '+' || c == '.' || c == 'e' || c == 'E'
 }
 
-// atomicWrite 同目录 temp + Sync + Rename 原子写；已存在时保留原权限位。失败时清理 temp 并保证原文件不动。
+// atomicWrite 同目录 temp + Sync + Rename 原子写；新建文件固定 0600（CreateTemp 默认，敏感配置文件
+// 不可被其他本机用户读取），已存在时保留原权限位。失败时清理 temp 并保证原文件不动——
+// 清理前先恢复可写：失败路径上 temp 可能已被 Chmod 成原文件只读位，Windows 上直接 Remove 只读文件会失败残留。
+// 注：POSIX 上原子替换可以覆盖只读目标（rename 取决于父目录权限），但会保留其权限位；
+// Windows 上替换是否成功取决于目标文件属性与占用状态。
 func atomicWrite(path string, data []byte) error {
 	tmp, err := os.CreateTemp(filepath.Dir(path), ".claude.json-*")
 	if err != nil {
@@ -250,6 +255,7 @@ func atomicWrite(path string, data []byte) error {
 	ok := false
 	defer func() {
 		if !ok {
+			_ = os.Chmod(tmpName, 0o600)
 			_ = os.Remove(tmpName)
 		}
 	}()
@@ -265,7 +271,11 @@ func atomicWrite(path string, data []byte) error {
 		return err
 	}
 	if st, err := os.Stat(path); err == nil {
-		_ = os.Chmod(tmpName, st.Mode().Perm())
+		if err := os.Chmod(tmpName, st.Mode().Perm()); err != nil {
+			return err
+		}
+	} else if !errors.Is(err, fs.ErrNotExist) {
+		return err
 	}
 	if err := os.Rename(tmpName, path); err != nil {
 		return err

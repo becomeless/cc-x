@@ -4,7 +4,7 @@
  *
  * 入口：解析 CLI 参数 → 分派到 CLI 路径（--list / xx <name> / -s）或交互菜单（TUI）。
  *
- * 铁律：绝不写 Claude Code 配置文件；API 切换只动 9 个受管环境变量。详见 CLAUDE.md / plan §2。
+ * 铁律：API、密钥和模型映射只走 10 个受管环境变量；唯一配置写入是用户主动触发的 onboarding 布尔字段。详见 AGENTS.md / plan §2。
  */
 import { createRequire } from 'node:module';
 import { Command, Option } from 'commander';
