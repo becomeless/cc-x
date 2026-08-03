@@ -29,7 +29,7 @@ endpoints, credentials, and model mappings purely at the environment-variable la
 rewrites your MCP, plugins, hooks, or other Claude Code behavior settings.
 
 ```text
-  CC-X v0.4.23     Default: Official
+  CC-X v0.4.24     Default: Official
 
      Official
    ▶ DeepSeek     work   · effort=max
@@ -226,9 +226,10 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 > endpoints; you pick one when selecting the provider.
 > Editing any model tier (opus/sonnet/haiku/fable) offers "Pick from model list" — pulls the
 > provider's actual models; models supporting 1M context (e.g. `deepseek-v4-pro`, `glm-5.2`,
-> `mimo-v2.5-pro`) are marked `[1M]` and get the `[1m]` suffix automatically — **only on the
-> opus/sonnet tiers** (the official docs document `[1m]` for those two mapping variables only);
-> haiku/fable tiers never append the suffix. Falls back to manual input on failure.
+> `mimo-v2.5-pro`) are marked `[1M]` and get the `[1m]` suffix automatically — **on the
+> opus/sonnet/fable tiers** (Claude Code reads the `[1m]` marker to enable extended context; a
+> third-party Fable mapping without it is managed at 200K). The haiku tier never appends the suffix.
+> Falls back to manual input on failure.
 
 ### Advanced
 

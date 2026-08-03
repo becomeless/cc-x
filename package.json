@@ -1,6 +1,6 @@
 {
   "name": "@cc-x/cc-x",
-  "version": "0.4.23",
+  "version": "0.4.24",
   "description": "Claude Code API 切换器（命令 xx）：API、密钥与模型映射纯环境变量切换，不改写 MCP、插件或 Hooks 配置。",
   "keywords": [
     "claude",

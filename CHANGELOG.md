@@ -1,6 +1,6 @@
 # 更新日志
 
-## v0.4.24 — 未发布
+## v0.4.24 — 2026-08-02
 
 - 修复：fable 档恢复自动附加 `[1m]` 后缀——v0.4.23 将附加限制为 opus/sonnet 档，实测发现第三方映射到 fable 档的模型无 `[1m]` 标记时 Claude Code 按 200K 管理上下文（`[1m]` 是其读取的能力标记，发送前剥离；当前运行时识别 `fable[1m]`）。修正为 opus/sonnet/fable 档命中供应商 `models_1m` 表才附加，haiku 档仍不附加；官方 Fable 5 不命中 1M 表，不受影响（Go / TypeScript 双版本对齐，含 fable 命中/未命中双用例）
 
