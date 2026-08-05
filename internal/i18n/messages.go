@@ -25,6 +25,25 @@ var messages = map[string]msg{
 	"cli.opt.lang":    {zh: "本次界面语言：zh / en", en: "UI language for this run: zh / en"},
 	"cli.opt.version": {zh: "显示版本号", en: "show version"},
 	"cli.opt.help":    {zh: "显示帮助", en: "show help"},
+	"cli.cmd.update": {
+		zh: "自更新：下载最新版并替换当前程序",
+		en: "self-update: download and replace with the latest version",
+	},
+
+	// —— 自更新 ——
+	"update.checking":       {zh: "正在检查最新版本…", en: "Checking for the latest version…"},
+	"update.latest":         {zh: "已是最新版本 {0}", en: "Already on the latest version {0}"},
+	"update.found":          {zh: "发现新版本 {0}（当前 {1}），开始更新…", en: "New version {0} found (current: {1}), updating…"},
+	"update.downloading":    {zh: "正在下载 {0}…", en: "Downloading {0}…"},
+	"update.verify":         {zh: "正在校验下载文件…", en: "Verifying the downloaded file…"},
+	"update.verifySkip":     {zh: "校验和不可用，跳过校验", en: "Checksum unavailable; skipping verification"},
+	"update.verifyMismatch": {zh: "校验和不匹配，已中止更新", en: "Checksum mismatch; update aborted"},
+	"update.done":           {zh: "已更新到 {0}，运行 xx --version 确认", en: "Updated to {0}; run xx --version to confirm"},
+	"update.failed":         {zh: "更新失败：{0}", en: "Update failed: {0}"},
+	"update.fallback":       {zh: "可手动执行安装命令：{0}", en: "You can update manually with: {0}"},
+	"update.dev":            {zh: "dev 构建无法自更新，请用安装命令：{0}", en: "A dev build cannot self-update; use the installer: {0}"},
+	"update.npmStart":       {zh: "正在通过 npm 安装最新版…", en: "Installing the latest version via npm…"},
+	"update.npmHint":        {zh: "请手动执行：{0}", en: "Run manually: {0}"},
 
 	// —— 列表 / 状态 ——
 	"list.default": {zh: "默认配置：{0}", en: "Default: {0}"},

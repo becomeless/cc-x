@@ -44,7 +44,7 @@ export async function openMenu(
         refreshed = true;
         bannerLatest = updateBanner(paths.dir, version);
       }
-      if (bannerLatest) notices.push(T('menu.updateAvailable', bannerLatest, upgradeCommand()));
+      if (bannerLatest) notices.push(T('menu.updateAvailable', bannerLatest, upgradeCommand(version)));
     }
     const updLabel = store.update === MODE_NOTIFY ? T('menu.updateNotify') : T('menu.updateOff');
     const buildItems = (): string[] => {

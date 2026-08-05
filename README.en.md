@@ -91,16 +91,27 @@ xx DeepSeek        # Set as default for new terminals
 
 ### Updating
 
-Updating just means **re-running the install command** — the installer downloads the latest
-release and overwrites the old binary in place, no uninstall needed. **Open a new terminal**
-afterward; `xx --version` should show the new version.
+**`xx update` does it all** — it checks for the latest release, downloads it, and replaces
+the binary in place (the npm edition runs `npm` for you). No install command to remember:
+
+```bash
+xx update     # check and update to the latest version
+xx --version  # confirm the version
+```
+
+> Self-update only replaces the program itself; your config and keys (`~/.cc-mini/`) are untouched.
+
+If self-update is unavailable (old version, read-only install directory, platform outside the
+release matrix, …), fall back to **re-running the install command** — the installer downloads
+the latest release and overwrites the old binary in place, no uninstall needed. **Open a new
+terminal** afterward; `xx --version` should show the new version.
 
 - **Windows**: `irm https://github.com/becomeless/cc-x/releases/latest/download/install.ps1 | iex`
 - **macOS / Linux**: `curl -fsSL https://github.com/becomeless/cc-x/releases/latest/download/install.sh | sh`
 - **npm**: `npm i -g @cc-x/cc-x@latest`
 
 > With the menu's "Update check" set to "notify", CC-X shows a banner at the top of the menu
-> when a new version is out, with the matching upgrade command for your platform.
+> when a new version is out — just run `xx update` (older versions get the install command).
 
 ---
 
@@ -119,6 +130,7 @@ xx                 # open the menu
 xx DeepSeek        # set as default
 xx DeepSeek -s     # use this session, launch Claude now (--session)
 xx -l              # list all profiles and state (--list)
+xx update          # check and update to the latest version
 xx --help          # all options
 ```
 

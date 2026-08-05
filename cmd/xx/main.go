@@ -18,6 +18,7 @@ import (
 	"github.com/becomeless/cc-x/internal/presets"
 	"github.com/becomeless/cc-x/internal/runtimeinfo"
 	"github.com/becomeless/cc-x/internal/tui"
+	"github.com/becomeless/cc-x/internal/update"
 )
 
 // version 在发布时通过 `-ldflags "-X main.version=x.y.z"` 注入；dev 下为占位。
@@ -52,6 +53,10 @@ func main() {
 	if opts.showHelp {
 		printHelp()
 		return
+	}
+	// `xx update`：自更新不需要 store，走早定语言路径即可（update 命令自带文案）。
+	if opts.name == "update" {
+		os.Exit(update.RunSelfUpdate(version))
 	}
 	os.Exit(dispatch(opts))
 }
@@ -282,6 +287,9 @@ func printHelp() {
 	fmt.Println("Usage: xx [options] [name]")
 	fmt.Println("")
 	fmt.Println("  " + i18n.T("cli.desc"))
+	fmt.Println("")
+	fmt.Println("Commands:")
+	fmt.Printf("  update                     %s\n", i18n.T("cli.cmd.update"))
 	fmt.Println("")
 	fmt.Println("Arguments:")
 	fmt.Printf("  name                       %s\n", i18n.T("cli.arg.name"))

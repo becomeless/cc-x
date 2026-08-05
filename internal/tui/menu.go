@@ -42,7 +42,7 @@ func OpenMenu(t *Terminal, paths config.StorePaths, store *config.Store, scope d
 				bannerLatest, bannerOK = update.Banner(paths.Dir, version)
 			}
 			if bannerOK {
-				notices = append(notices, i18n.T("menu.updateAvailable", bannerLatest, update.UpgradeCommand()))
+				notices = append(notices, i18n.T("menu.updateAvailable", bannerLatest, update.UpgradeCommand(version)))
 			}
 		}
 		updLabel := i18n.T("menu.updateOff")

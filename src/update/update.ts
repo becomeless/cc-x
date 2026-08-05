@@ -5,8 +5,11 @@
  * ~/.cc-mini/update-check.json，每 24h 才真去网络。显示永远读缓存（瞬时、不阻塞），过期时后台
  * 异步刷新——新版本「下次打开」才提示。离线/失败一律静默。只写工具自己的 ~/.cc-mini/（铁律）。
  */
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+
+import { T } from '../i18n/index.js';
 
 export const MODE_OFF = '';
 export const MODE_NOTIFY = 'notify';
@@ -16,6 +19,9 @@ const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 const HTTP_TIMEOUT_MS = 2000;
 const CACHE_FILE = 'update-check.json';
 const UPGRADE_CMD = 'npm i -g @cc-x/cc-x@latest';
+/** 引入 `xx update` 命令的版本：旧版二进制没有该命令，横幅按版本门控（防版本错配）。 */
+const MIN_SELF_UPDATE = '0.4.25';
+const SELF_UPDATE_CMD = 'xx update';
 
 interface Cache {
   checkedAt: number; // unix 秒
@@ -44,9 +50,51 @@ async function refresh(storeDir: string): Promise<void> {
   writeCache(storeDir, { checkedAt: Math.floor(Date.now() / 1000), latest });
 }
 
-/** 当前版本（npm 版）的升级命令。 */
-export function upgradeCommand(): string {
-  return UPGRADE_CMD;
+/** 当前版本的升级命令：内置自更新（>= MIN_SELF_UPDATE）返回 `xx update`，旧版仍给 npm 命令。 */
+export function upgradeCommand(current: string): string {
+  return sameOrNewer(current, MIN_SELF_UPDATE) ? SELF_UPDATE_CMD : UPGRADE_CMD;
+}
+
+/** current >= min（语义化三段的整数比较；任一侧解析失败返回 false）。 */
+function sameOrNewer(current: string, min: string): boolean {
+  const c = parseSemver(current);
+  const m = parseSemver(min);
+  if (!c || !m) return false;
+  if (c[0] !== m[0]) return c[0] > m[0];
+  if (c[1] !== m[1]) return c[1] > m[1];
+  return c[2] >= m[2];
+}
+
+/** `xx update`：npm 版自更新 = 实时查版本 → 有新版本则自动跑 npm 升级，失败回退打印命令。 */
+export async function runUpdate(current: string): Promise<void> {
+  console.log(`  ${T('update.checking')}`);
+  const latest = await fetchLatest();
+  if (!latest) {
+    console.error(`  ${T('update.failed', '网络错误或 GitHub 不可达')}`);
+    console.error(`  ${T('update.npmHint', UPGRADE_CMD)}`);
+    process.exitCode = 1;
+    return;
+  }
+  if (parseSemver(current) === undefined) {
+    console.error(`  ${T('update.dev', UPGRADE_CMD)}`);
+    return;
+  }
+  if (!isNewer(latest, current)) {
+    console.log(`  ${T('update.latest', latest)}`);
+    return;
+  }
+  console.log(`  ${T('update.found', latest, current)}`);
+  console.log(`  ${T('update.npmStart')}`);
+  // Windows 上 npm 是 npm.cmd，shell 模式由 cmd.exe 解析（对齐 session.ts 的 EINVAL 防护）。
+  const isWin = process.platform === 'win32';
+  const res = spawnSync('npm', ['install', '-g', '@cc-x/cc-x@latest'], { stdio: 'inherit', shell: isWin });
+  if (res.error || res.status !== 0) {
+    console.error(`  ${T('update.failed', res.error?.message ?? `npm 退出码 ${res.status ?? '?'}`)}`);
+    console.error(`  ${T('update.npmHint', UPGRADE_CMD)}`);
+    process.exitCode = 1;
+    return;
+  }
+  console.log(`  ${T('update.done', latest)}`);
 }
 
 function cachePath(storeDir: string): string {
@@ -81,7 +129,7 @@ function writeCache(storeDir: string, c: Cache): void {
 }
 
 /** 用 releases/latest 的 302 重定向抠最新版本号；redirect:'manual' = 不跟随 = 不走 GitHub API。 */
-async function fetchLatest(): Promise<string | undefined> {
+export async function fetchLatest(): Promise<string | undefined> {
   try {
     const resp = await fetch(LATEST_URL, {
       redirect: 'manual',
@@ -108,7 +156,7 @@ export function isNewer(latest: string, current: string): boolean {
   return lc > cc;
 }
 
-function parseSemver(s: string): [number, number, number] | undefined {
+export function parseSemver(s: string): [number, number, number] | undefined {
   let v = s.trim().replace(/^v/, '');
   const cut = v.search(/[-+]/);
   if (cut >= 0) v = v.slice(0, cut);

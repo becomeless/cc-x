@@ -16,6 +16,7 @@ import { setDefault } from './env/default.js';
 import { providerDisplayName, resolveLang, setLang, T } from './i18n/index.js';
 import { currentTerminalLine } from './runtime-info.js';
 import { openMenu, profileRows } from './ui/menus.js';
+import { runUpdate } from './update/update.js';
 
 const require = createRequire(import.meta.url);
 const pkg = require('../package.json') as { version: string };
@@ -65,6 +66,14 @@ function main(): void {
       new Option('--default-scope <scope>', T('cli.opt.defaultScope')).choices(['user', 'process']).default('user'),
     )
     .addOption(new Option('--lang <lang>', T('cli.opt.lang')).choices(['zh', 'en']))
+    // 子命令优先于顶层 [name] 位置参数：`xx update` 命中这里而不是找名为 update 的配置。
+    .command('update')
+    .description(T('cli.cmd.update'))
+    .action(async () => {
+      await runUpdate(pkg.version);
+    });
+
+  program
     .action(async (name: string | undefined, raw: GlobalOpts) => {
       await dispatch(name, normalizeOpts(raw));
     });

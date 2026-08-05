@@ -78,13 +78,22 @@ xx DeepSeek        # 设为默认，以后新终端自动生效
 
 ### 更新到新版本
 
-更新就是**重新跑一遍安装命令**——安装器会下载最新版覆盖旧的，不用先卸载。跑完**新开一个终端**，`xx --version` 即为新版本。
+**`xx update` 一把搞定**——自动检查最新版、下载并原地替换（npm 版自动跑 npm 升级），无需记任何安装命令：
+
+```bash
+xx update     # 检查并更新到最新版本
+xx --version  # 确认版本
+```
+
+> 自更新只替换程序本体，不影响配置和密钥（`~/.cc-mini/` 原样保留）。
+
+如自更新不可用（旧版本、目录无写权限、平台在发布矩阵外等），兜底是**重新跑一遍安装命令**——安装器会下载最新版覆盖旧的，不用先卸载。跑完**新开一个终端**，`xx --version` 即为新版本。
 
 - **Windows**：`irm https://github.com/becomeless/cc-x/releases/latest/download/install.ps1 | iex`
 - **macOS / Linux**：`curl -fsSL https://github.com/becomeless/cc-x/releases/latest/download/install.sh | sh`
 - **npm**：`npm i -g @cc-x/cc-x@latest`
 
-> 把菜单里的「更新检查」开到「提醒」后，有新版时 CC-X 会在菜单顶部横幅提示，并直接给出上面对应平台的升级命令。
+> 把菜单里的「更新检查」开到「提醒」后，有新版时 CC-X 会在菜单顶部横幅提示，直接敲 `xx update` 即可升级（旧版本会提示安装命令）。
 
 ---
 
@@ -102,6 +111,7 @@ xx                 # 打开菜单
 xx DeepSeek        # 设为默认
 xx DeepSeek -s     # 本次启用，立即启动 Claude（--session 同义）
 xx -l              # 列出所有配置及状态（--list 同义）
+xx update          # 检查并更新到最新版本
 xx --help          # 全部参数
 ```
 

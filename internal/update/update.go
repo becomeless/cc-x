@@ -9,10 +9,8 @@
 package update
 
 import (
-	"context"
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -71,8 +69,12 @@ func MaybeRefresh(storeDir string) {
 	}()
 }
 
-// UpgradeCommand 返回当前平台的升级命令（Go 原生版走安装器一行命令）。
-func UpgradeCommand() string {
+// UpgradeCommand 返回当前版本的升级方式：内置自更新（>= minSelfUpdate）返回
+// `xx update`；旧版二进制没有该命令，仍给安装器一行命令（防版本错配）。
+func UpgradeCommand(current string) string {
+	if shouldUseSelfUpdate(current) {
+		return selfUpdateCmd
+	}
 	if runtime.GOOS == "windows" {
 		return winUpgrade
 	}
@@ -115,24 +117,13 @@ func writeCache(storeDir string, c cache) {
 
 // fetchLatest 用 curl 子进程获取 releases/latest 的 302 Location 并抠出版本号。
 // --max-redirs 0 禁止跟随重定向；-w "%{redirect_url}" 直接输出目标 URL，无需解析响应头。
-// curl 不可用或网络失败均静默返回 ""。
+// curl 不可用或网络失败均静默返回 ""（横幅后台刷新语义；显式 update 走 latestVersion 报错）。
 func fetchLatest() string {
-	nullDev := "/dev/null"
-	if runtime.GOOS == "windows" {
-		nullDev = "NUL"
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), fetchTimeout)
-	defer cancel()
-	out, err := exec.CommandContext(ctx, "curl", "-s", "--max-redirs", "0",
-		"-o", nullDev, "-w", "%{redirect_url}", latestURL).Output()
-	if err != nil || len(out) == 0 {
+	v, err := latestVersion()
+	if err != nil {
 		return ""
 	}
-	m := tagRe.FindStringSubmatch(strings.TrimSpace(string(out)))
-	if m == nil {
-		return ""
-	}
-	return m[1]
+	return v
 }
 
 // isNewer 报告 latest 是否严格新于 current（"a.b.c"，忽略前导 v 与后缀）。解析失败一律 false（不误报）。
