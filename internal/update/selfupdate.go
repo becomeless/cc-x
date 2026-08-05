@@ -381,14 +381,15 @@ func copySidecars(srcDir, destDir string) {
 // RunSelfUpdate 执行 `xx update` 主流程，返回进程退出码。文案走 i18n。
 func RunSelfUpdate(current string) int {
 	fmt.Println("")
+	// dev 构建无法自更新，先短路（不联网，省一次无谓请求）
+	if _, ok := parseSemver(current); !ok {
+		fmt.Fprintf(os.Stderr, "  %s\n", i18n.T("update.dev", UpgradeCommand(current)))
+		return 1
+	}
 	fmt.Printf("  %s\n", i18n.T("update.checking"))
 	latest, err := latestVersion()
 	if err != nil {
 		return failSelfUpdate(err, current)
-	}
-	if _, ok := parseSemver(current); !ok {
-		fmt.Fprintf(os.Stderr, "  %s\n", i18n.T("update.dev", UpgradeCommand(current)))
-		return 1
 	}
 	if !isNewer(latest, current) {
 		fmt.Printf("  %s\n", i18n.T("update.latest", latest))

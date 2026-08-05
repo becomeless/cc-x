@@ -67,16 +67,18 @@ function sameOrNewer(current: string, min: string): boolean {
 
 /** `xx update`：npm 版自更新 = 实时查版本 → 有新版本则自动跑 npm 升级，失败回退打印命令。 */
 export async function runUpdate(current: string): Promise<void> {
+  // dev 构建无法自更新，先短路（不联网，省一次无谓请求）；退出码对齐 Go 版（1）。
+  if (parseSemver(current) === undefined) {
+    console.error(`  ${T('update.dev', UPGRADE_CMD)}`);
+    process.exitCode = 1;
+    return;
+  }
   console.log(`  ${T('update.checking')}`);
   const latest = await fetchLatest();
   if (!latest) {
     console.error(`  ${T('update.failed', '网络错误或 GitHub 不可达')}`);
     console.error(`  ${T('update.npmHint', UPGRADE_CMD)}`);
     process.exitCode = 1;
-    return;
-  }
-  if (parseSemver(current) === undefined) {
-    console.error(`  ${T('update.dev', UPGRADE_CMD)}`);
     return;
   }
   if (!isNewer(latest, current)) {
