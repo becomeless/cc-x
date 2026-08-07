@@ -79,7 +79,7 @@ npm install -g @cc-x/cc-x
 ### Step 2 · Configure your API key
 
 ```bash
-xx   # First run seeds 4 presets — pick one, edit, paste your key
+xx   # First run seeds 9 presets — pick one, edit, paste your key
 ```
 
 ### Step 3 · Start using it
@@ -117,8 +117,7 @@ terminal** afterward; `xx --version` should show the new version.
 
 ## 60-second quick start
 
-The first run of `xx` seeds 4 profiles in `~/.cc-mini/providers.json` (Official + DeepSeek +
-Zhipu GLM + Xiaomi MiMo), **with empty keys**.
+The first run of `xx` seeds 9 profiles in `~/.cc-mini/providers.json` (Official + 8 third-party), **with empty keys**.
 
 1. `xx` → ↑↓ to a profile → Enter → **Edit** → **API key** → paste your key
 2. Then either:
@@ -227,15 +226,21 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 
 ### Pre-seeded profiles
 
-| Profile | BASE_URL | OPUS / SONNET | HAIKU (incl. background) | effort | Extra env |
+| Profile | BASE_URL | OPUS / SONNET / FABLE | HAIKU | effort | Extra env |
 |---|---|---|---|---|---|
 | Official | empty (logged-in) | — | — | — | — |
 | DeepSeek | `https://api.deepseek.com/anthropic` | `deepseek-v4-pro` | `deepseek-v4-flash` | `max` (recommended) | — |
-| Zhipu GLM | `https://open.bigmodel.cn/api/anthropic` | `GLM-4.7` | `glm-4.5-air` | — | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` |
+| Zhipu GLM | `https://open.bigmodel.cn/api/anthropic` | `GLM-4.7` | `glm-4.5-air` | — | `DISABLE_NONESSENTIAL_TRAFFIC=1` |
 | Xiaomi MiMo | `https://api.xiaomimimo.com/anthropic` | `mimo-v2.5-pro` | `mimo-v2.5-pro` | — | — |
+| Kimi | `https://api.moonshot.cn/anthropic` | `kimi-k3` | `kimi-k3` | `max` (recommended) | — |
+| MiniMax | `https://api.minimaxi.com/anthropic` | `MiniMax-M3` | `MiniMax-M3` | — | — |
+| OpenRouter | `https://openrouter.ai/api` | `anthropic/claude-sonnet-5` | `anthropic/claude-haiku-4-5` | — | — |
+| Baidu Qianfan | `https://qianfan.baidubce.com/anthropic/coding` | `qianfan-code-latest` | `qianfan-code-latest` | — | `DISABLE_NONESSENTIAL_TRAFFIC=1` |
+| Alibaba Bailian | `https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic` | `qwen3.8-max` | `qwen3.6-flash` | — | — |
+| Volc Ark | `https://ark.cn-beijing.volces.com/api/coding` | `doubao-seed-2.0-code` | `doubao-seed-2.0-code` | — | — |
 
-> Model names change as providers update. Xiaomi MiMo has both pay-as-you-go and TokenPlan
-> endpoints; you pick one when selecting the provider.
+> Model names change as providers update. Several providers offer multiple endpoints
+> (e.g. pay-as-you-go vs Token Plan); you pick one when selecting the provider.
 > Editing any model tier (opus/sonnet/haiku/fable) offers "Pick from model list" — pulls the
 > provider's actual models; models supporting 1M context (e.g. `deepseek-v4-pro`, `glm-5.2`,
 > `mimo-v2.5-pro`) are marked `[1M]` and get the `[1m]` suffix automatically — **on the

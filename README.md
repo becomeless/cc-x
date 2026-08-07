@@ -66,7 +66,7 @@ npm install -g @cc-x/cc-x
 ### Step 2 · 配置 API 密钥
 
 ```bash
-xx   # 首次运行自动生成 4 个预设，选一个 → 编辑 → 填入你的 key
+xx   # 首次运行自动生成 9 个预设，选一个 → 编辑 → 填入你的 key
 ```
 
 ### Step 3 · 开始使用
@@ -99,7 +99,7 @@ xx --version  # 确认版本
 
 ## 60 秒上手
 
-首次运行 `xx` 会在 `~/.cc-mini/providers.json` 生成 4 个预设配置（官方 + DeepSeek + 智谱GLM + 小米MiMo），**密钥为空**。
+首次运行 `xx` 会在 `~/.cc-mini/providers.json` 生成 9 个预设配置（官方 + 8 家第三方），**密钥为空**。
 
 1. `xx` → ↑↓ 选中要用的配置 → Enter → 「编辑」→「API 密钥」→ 填入你的 key
 2. 配好后二选一：
@@ -201,12 +201,18 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 
 ### 预置配置
 
-| 配置 | BASE_URL | OPUS / SONNET | HAIKU（含后台任务） | effort | 额外 env |
+| 配置 | BASE_URL | OPUS / SONNET / FABLE | HAIKU | effort | 额外 env |
 |---|---|---|---|---|---|
 | 官方 | 留空=登录态 | — | — | — | — |
 | DeepSeek | `https://api.deepseek.com/anthropic` | `deepseek-v4-pro` | `deepseek-v4-flash` | `max`（官方推荐） | — |
-| 智谱GLM | `https://open.bigmodel.cn/api/anthropic` | `GLM-4.7` | `glm-4.5-air` | — | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC=1` |
+| 智谱GLM | `https://open.bigmodel.cn/api/anthropic` | `GLM-4.7` | `glm-4.5-air` | — | `DISABLE_NONESSENTIAL_TRAFFIC=1` |
 | 小米MiMo | `https://api.xiaomimimo.com/anthropic` | `mimo-v2.5-pro` | `mimo-v2.5-pro` | — | — |
+| Kimi | `https://api.moonshot.cn/anthropic` | `kimi-k3` | `kimi-k3` | `max`（官方推荐） | — |
+| MiniMax | `https://api.minimaxi.com/anthropic` | `MiniMax-M3` | `MiniMax-M3` | — | — |
+| OpenRouter | `https://openrouter.ai/api` | `anthropic/claude-sonnet-5` | `anthropic/claude-haiku-4-5` | — | — |
+| 百度千帆 | `https://qianfan.baidubce.com/anthropic/coding` | `qianfan-code-latest` | `qianfan-code-latest` | — | `DISABLE_NONESSENTIAL_TRAFFIC=1` |
+| 阿里百炼 | `https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic` | `qwen3.8-max` | `qwen3.6-flash` | — | — |
+| 火山方舟 | `https://ark.cn-beijing.volces.com/api/coding` | `doubao-seed-2.0-code` | `doubao-seed-2.0-code` | — | — |
 
 > 模型名随各家更新而变，以供应商官方接入文档为准。小米有按量付费和 TokenPlan 两个地址，选供应商时会让你挑。
 > 四个模型档位行（opus/sonnet/haiku/fable）编辑时可选「从模型列表选择」——从供应商 API 拉取实际可用模型；**opus/sonnet/fable 档**命中 1M 支持表（如 `deepseek-v4-pro`、`glm-5.2`、`mimo-v2.5-pro`）的模型标 `[1M]` 并自动附 `[1m]` 后缀（Claude Code 通过 `[1m]` 标记识别扩展上下文，第三方 fable 档映射无标记会按 200K 管理），haiku 档不附加；失败回退手动输入。

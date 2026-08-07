@@ -1,5 +1,15 @@
 # 更新日志
 
+## v0.4.26 — 2026-08-07
+
+- 新增：6 个供应商预设——Kimi (月之暗面)、MiniMax、阿里百炼、火山方舟、OpenRouter、百度千帆（Go / TypeScript 双版本对齐）
+- 修正：gofmt 对齐——Kimi 块字段对齐到 `Models1M` 列、百度千帆块对齐；移除 MiniMax 冗余 `models_api_map`（两条值均等于默认推导 `{base}/v1/models`）
+
+## v0.4.25 — 2026-08-05
+
+- 新增：`xx update` 自更新命令——Go 原生版从 GitHub Releases 下载替换当前二进制、npm 版走 `npm install -g @cc-x/cc-x@latest` 自动升级
+- 修正：dev 分支对齐与短路顺序（审查修正）
+
 ## v0.4.24 — 2026-08-02
 
 - 修复：fable 档恢复自动附加 `[1m]` 后缀——v0.4.23 将附加限制为 opus/sonnet 档，实测发现第三方映射到 fable 档的模型无 `[1m]` 标记时 Claude Code 按 200K 管理上下文（`[1m]` 是其读取的能力标记，发送前剥离；当前运行时识别 `fable[1m]`）。修正为 opus/sonnet/fable 档命中供应商 `models_1m` 表才附加，haiku 档仍不附加；官方 Fable 5 不命中 1M 表，不受影响（Go / TypeScript 双版本对齐，含 fable 命中/未命中双用例）
