@@ -113,9 +113,9 @@ var BuiltinPresets = []Preset{
 		Models: Models{Opus: "anthropic/claude-opus-5", Sonnet: "anthropic/claude-sonnet-5", Haiku: "anthropic/claude-haiku-4-5", Fable: "anthropic/claude-fable-5"},
 	},
 	{
-		Name: "百度千帆",
-		Auth: AuthToken,
-		URLs: []URL{{Label: "Coding Plan", URL: "https://qianfan.baidubce.com/anthropic/coding"}},
+		Name:   "百度千帆",
+		Auth:   AuthToken,
+		URLs:   []URL{{Label: "Coding Plan", URL: "https://qianfan.baidubce.com/anthropic/coding"}},
 		Models: Models{Opus: "qianfan-code-latest", Sonnet: "qianfan-code-latest", Haiku: "qianfan-code-latest", Fable: "qianfan-code-latest"},
 		Env: map[string]string{
 			"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
