@@ -55,11 +55,26 @@
       { "label": "国际站", "url": "https://api.minimax.io/anthropic" }
     ],
     "models": { "opus": "MiniMax-M3", "sonnet": "MiniMax-M3", "haiku": "MiniMax-M3", "fable": "MiniMax-M3" },
-    "models_api_map": {
-      "https://api.minimaxi.com/anthropic": "https://api.minimaxi.com/anthropic/v1/models",
-      "https://api.minimax.io/anthropic": "https://api.minimax.io/anthropic/v1/models"
-    },
     "models_1m": ["MiniMax-M3"]
+  },
+  {
+    "name": "OpenRouter",
+    "auth": "API_KEY",
+    "urls": [
+      { "label": "Anthropic 兼容", "url": "https://openrouter.ai/api" }
+    ],
+    "models": { "opus": "anthropic/claude-opus-5", "sonnet": "anthropic/claude-sonnet-5", "haiku": "anthropic/claude-haiku-4-5", "fable": "anthropic/claude-fable-5" }
+  },
+  {
+    "name": "百度千帆",
+    "auth": "AUTH_TOKEN",
+    "urls": [
+      { "label": "Coding Plan", "url": "https://qianfan.baidubce.com/anthropic/coding" }
+    ],
+    "models": { "opus": "qianfan-code-latest", "sonnet": "qianfan-code-latest", "haiku": "qianfan-code-latest", "fable": "qianfan-code-latest" },
+    "env": {
+      "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1"
+    }
   },
   {
     "name": "阿里百炼",

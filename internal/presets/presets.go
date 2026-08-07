@@ -89,11 +89,11 @@ var BuiltinPresets = []Preset{
 		Models1M: []string{"mimo-v2.5-pro"},
 	},
 	{
-		Name:   "Kimi (月之暗面)",
-		Auth:   AuthToken,
-		Effort: "max",
-		URLs:   []URL{{Label: "Anthropic 兼容", URL: "https://api.moonshot.cn/anthropic"}},
-		Models:  Models{Opus: "kimi-k3", Sonnet: "kimi-k3", Haiku: "kimi-k3", Fable: "kimi-k3"},
+		Name:     "Kimi (月之暗面)",
+		Auth:     AuthToken,
+		Effort:   "max",
+		URLs:     []URL{{Label: "Anthropic 兼容", URL: "https://api.moonshot.cn/anthropic"}},
+		Models:   Models{Opus: "kimi-k3", Sonnet: "kimi-k3", Haiku: "kimi-k3", Fable: "kimi-k3"},
 		Models1M: []string{"kimi-k3"},
 	},
 	{
@@ -103,12 +103,23 @@ var BuiltinPresets = []Preset{
 			{Label: "国内站", URL: "https://api.minimaxi.com/anthropic"},
 			{Label: "国际站", URL: "https://api.minimax.io/anthropic"},
 		},
-		Models: Models{Opus: "MiniMax-M3", Sonnet: "MiniMax-M3", Haiku: "MiniMax-M3", Fable: "MiniMax-M3"},
-		ModelsAPIMap: map[string]string{
-			"https://api.minimaxi.com/anthropic": "https://api.minimaxi.com/anthropic/v1/models",
-			"https://api.minimax.io/anthropic":  "https://api.minimax.io/anthropic/v1/models",
-		},
+		Models:   Models{Opus: "MiniMax-M3", Sonnet: "MiniMax-M3", Haiku: "MiniMax-M3", Fable: "MiniMax-M3"},
 		Models1M: []string{"MiniMax-M3"},
+	},
+	{
+		Name:   "OpenRouter",
+		Auth:   AuthAPIKey,
+		URLs:   []URL{{Label: "Anthropic 兼容", URL: "https://openrouter.ai/api"}},
+		Models: Models{Opus: "anthropic/claude-opus-5", Sonnet: "anthropic/claude-sonnet-5", Haiku: "anthropic/claude-haiku-4-5", Fable: "anthropic/claude-fable-5"},
+	},
+	{
+		Name: "百度千帆",
+		Auth: AuthToken,
+		URLs: []URL{{Label: "Coding Plan", URL: "https://qianfan.baidubce.com/anthropic/coding"}},
+		Models: Models{Opus: "qianfan-code-latest", Sonnet: "qianfan-code-latest", Haiku: "qianfan-code-latest", Fable: "qianfan-code-latest"},
+		Env: map[string]string{
+			"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
+		},
 	},
 	{
 		Name: "阿里百炼",
