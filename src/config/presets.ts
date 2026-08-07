@@ -55,6 +55,44 @@ export const BUILTIN_PRESETS: Preset[] = [
     models1m: ['mimo-v2.5-pro'],
   },
   {
+    name: 'Kimi (月之暗面)',
+    auth: 'AUTH_TOKEN',
+    effort: 'max',
+    urls: [{ label: 'Anthropic 兼容', url: 'https://api.moonshot.cn/anthropic' }],
+    models: { opus: 'kimi-k3', sonnet: 'kimi-k3', haiku: 'kimi-k3', fable: 'kimi-k3' },
+    models1m: ['kimi-k3'],
+  },
+  {
+    name: 'MiniMax',
+    auth: 'AUTH_TOKEN',
+    urls: [
+      { label: '国内站', url: 'https://api.minimaxi.com/anthropic' },
+      { label: '国际站', url: 'https://api.minimax.io/anthropic' },
+    ],
+    models: { opus: 'MiniMax-M3', sonnet: 'MiniMax-M3', haiku: 'MiniMax-M3', fable: 'MiniMax-M3' },
+    modelsApiMap: {
+      'https://api.minimaxi.com/anthropic': 'https://api.minimaxi.com/anthropic/v1/models',
+      'https://api.minimax.io/anthropic': 'https://api.minimax.io/anthropic/v1/models',
+    },
+    models1m: ['MiniMax-M3'],
+  },
+  {
+    name: '阿里百炼',
+    auth: 'AUTH_TOKEN',
+    urls: [
+      { label: 'Token Plan', url: 'https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic' },
+      { label: 'Coding Plan', url: 'https://coding.dashscope.aliyuncs.com/apps/anthropic' },
+    ],
+    models: { opus: 'qwen3.8-max', sonnet: 'qwen3.8-max', haiku: 'qwen3.6-flash', fable: 'qwen3.8-max' },
+    models1m: ['qwen3.8-max', 'qwen3.7-max', 'qwen3.7-plus'],
+  },
+  {
+    name: '火山方舟',
+    auth: 'AUTH_TOKEN',
+    urls: [{ label: 'Coding Plan', url: 'https://ark.cn-beijing.volces.com/api/coding' }],
+    models: { opus: 'doubao-seed-2.0-code', sonnet: 'doubao-seed-2.0-code', haiku: 'doubao-seed-2.0-code', fable: 'doubao-seed-2.0-code' },
+  },
+  {
     name: '官方Anthropic',
     auth: 'API_KEY',
     urls: [{ label: '(留空，用登录态)', url: '' }],
