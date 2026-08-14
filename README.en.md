@@ -9,6 +9,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/becomeless/cc-x?style=flat-square" alt="license"></a>
   <a href="https://github.com/becomeless/cc-x/releases/latest"><img src="https://img.shields.io/github/downloads/becomeless/cc-x/total?style=flat-square&color=success" alt="downloads"></a>
   <a href="https://github.com/becomeless/cc-x/actions"><img src="https://img.shields.io/github/actions/workflow/status/becomeless/cc-x/release.yml?style=flat-square&label=build" alt="build"></a>
+  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.26-blue?style=flat-square&logo=go" alt="go"></a>
+  <a href="https://www.npmjs.com/package/@cc-x/cc-x"><img src="https://img.shields.io/npm/v/@cc-x/cc-x?style=flat-square&color=success" alt="npm"></a>
 </p>
 
 <p align="center">
@@ -16,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="#install">Install</a> · <a href="#60-second-quick-start">Quick Start</a> · <a href="#two-modes-the-key-concept">Concepts</a> · <a href="#configuration">Config</a> · <a href="#faq">FAQ</a>
+  <a href="#features">Features</a> · <a href="#install">Install</a> · <a href="#60-second-quick-start">Quick Start</a> · <a href="#two-modes-the-key-concept">Concepts</a> · <a href="#configuration">Config</a> · <a href="#project-structure">Structure</a> · <a href="#faq">FAQ</a>
 </p>
 
 ---
@@ -47,7 +49,19 @@ rewrites your MCP, plugins, hooks, or other Claude Code behavior settings.
 
 ---
 
-## Install
+## ✨ Features
+
+- **One job**: switch which API Claude Code uses — clear boundaries, no "control panel on top"
+- **Never touches config files**: endpoints, keys, and model mappings live only in environment variables; MCP, plugins, and hooks are untouched
+- **Two scopes**: "Use this session" is process-local; "Set default" writes user env vars — parallel terminals never interfere
+- **9 pre-seeded providers**: Official + DeepSeek / Zhipu GLM / Xiaomi MiMo / Kimi / MiniMax / OpenRouter / Baidu Qianfan / Alibaba Bailian / Volc Ark — paste a key and go
+- **Four-tier model mapping**: opus / sonnet / haiku / fable translate to each provider's real model names, with optional live model-list pull
+- **`xx update` self-update**: check, download, replace in place
+- **Cross-platform, zero deps**: native Go builds for Windows / macOS / Linux, plus npm (`@cc-x/cc-x`)
+
+---
+
+## 🚀 Install
 
 > Install [Claude Code](https://claude.ai/code) first (`claude` on PATH). **Open a new terminal** after installing.
 
@@ -115,7 +129,7 @@ terminal** afterward; `xx --version` should show the new version.
 
 ---
 
-## 60-second quick start
+## ⏱ 60-second quick start
 
 The first run of `xx` seeds 9 profiles in `~/.cc-mini/providers.json` (Official + 8 third-party), **with empty keys**.
 
@@ -135,7 +149,7 @@ xx --help          # all options
 
 ---
 
-## Two modes (the key concept)
+## 🧭 Two modes (the key concept)
 
 Which API Claude uses is decided by **environment variables**. CC-X offers two scopes:
 
@@ -158,7 +172,7 @@ Environment variables are naturally process-isolated.
 
 ---
 
-## When CC-X is NOT the right tool
+## 🚫 When CC-X is NOT the right tool
 
 - You need to manage MCP, hooks, plugins, or multiple CLIs → use [cc-switch](https://github.com/farion1231/cc-switch)
 - You only use the official API, never switch → you don't need CC-X
@@ -168,7 +182,7 @@ CC-X cares more about boundaries than features. It does one thing: **switch APIs
 
 ---
 
-## CC-X vs cc-switch
+## ⚖️ CC-X vs cc-switch
 
 cc-switch is an excellent full-featured GUI; CC-X takes the opposite, minimal approach.
 
@@ -185,7 +199,7 @@ cc-switch is an excellent full-featured GUI; CC-X takes the opposite, minimal ap
 
 ---
 
-## Design philosophy
+## 🧠 Design philosophy
 
 > CC-X cares more about boundaries than features.
 
@@ -197,7 +211,7 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 
 ---
 
-## Configuration
+## ⚙️ Configuration
 
 ### Fields
 
@@ -264,7 +278,7 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 
 ---
 
-## Data & files
+## 💾 Data & files
 
 - **Profiles (plaintext keys, keep local)**: `~/.cc-mini/providers.json` (also holds `lang` and `update`)
 - **Provider catalog**: shipped `presets.json`; override at `~/.cc-mini/presets.json`
@@ -287,7 +301,7 @@ CC-X only touches these 10 "managed" variables (and clears the ones a target pro
 
 ---
 
-## FAQ
+## ❓ FAQ
 
 **Does switching in one terminal affect another?** No. "Use this session" is process-scoped;
 "Set default" only affects new terminals.
@@ -313,7 +327,7 @@ For most users, the install command above is better: it picks the platform, veri
 
 ---
 
-## Uninstall
+## 🗑 Uninstall
 
 1. Clear env vars: `xx` → Official → Set default
 2. Remove the binary:
@@ -332,6 +346,21 @@ For most users, the install command above is better: it picks the platform, veri
 
 ---
 
-## License
+## 📁 Project structure
+
+```
+cmd/               Go CLI entrypoints (xx, tui-probe)
+internal/          Core implementation: config, env vars, platform adapters, TUI, self-update
+src/               npm build source (TypeScript)
+scripts/           Build/release scripts
+docs/screenshots/  UI screenshots
+presets.json       Provider catalog (overridable at ~/.cc-mini/presets.json)
+install.ps1 / install.sh    Platform installers
+CHANGELOG.md       Changelog
+```
+
+---
+
+## 📄 License
 
 [MIT](LICENSE)

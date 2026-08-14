@@ -9,6 +9,8 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/becomeless/cc-x?style=flat-square" alt="license"></a>
   <a href="https://github.com/becomeless/cc-x/releases/latest"><img src="https://img.shields.io/github/downloads/becomeless/cc-x/total?style=flat-square&color=success" alt="downloads"></a>
   <a href="https://github.com/becomeless/cc-x/actions"><img src="https://img.shields.io/github/actions/workflow/status/becomeless/cc-x/release.yml?style=flat-square&label=build" alt="build"></a>
+  <a href="https://go.dev"><img src="https://img.shields.io/badge/Go-1.26-blue?style=flat-square&logo=go" alt="go"></a>
+  <a href="https://www.npmjs.com/package/@cc-x/cc-x"><img src="https://img.shields.io/npm/v/@cc-x/cc-x?style=flat-square&color=success" alt="npm"></a>
 </p>
 
 <p align="center">
@@ -16,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="#安装">安装</a> · <a href="#60-秒上手">上手</a> · <a href="#两种模式核心概念">概念</a> · <a href="#配置说明">配置</a> · <a href="#faq">FAQ</a>
+  <a href="#特性">特性</a> · <a href="#安装">安装</a> · <a href="#60-秒上手">上手</a> · <a href="#两种模式核心概念">概念</a> · <a href="#配置说明">配置</a> · <a href="#项目结构">结构</a> · <a href="#faq">FAQ</a>
 </p>
 
 ---
@@ -33,7 +35,19 @@ CC-X 只做一件事：切换 Claude Code 用哪个 API。切换只在**环境�
 
 ---
 
-## 安装
+## ✨ 特性
+
+- **只做一件事**：切换 Claude Code 用哪个 API，边界清晰，不造「上层控制台」
+- **不碰配置文件**：API 地址、密钥、模型映射只走环境变量；不接管 MCP、插件、Hooks
+- **两种作用域**：「本次启用」进程级临时切换，「设为默认」写入用户环境变量，多终端并行互不干扰
+- **9 个预置供应商**：官方 + DeepSeek / 智谱GLM / 小米MiMo / Kimi / MiniMax / OpenRouter / 百度千帆 / 阿里百炼 / 火山方舟，填 key 即用
+- **四档模型映射**：opus / sonnet / haiku / fable 一键翻译成各家模型名，可直连供应商 API 拉取真实模型列表
+- **`xx update` 自更新**：检查、下载、原地替换一把搞定
+- **跨平台零依赖**：Go 原生版覆盖 Windows / macOS / Linux，npm 版（`@cc-x/cc-x`）全平台可用
+
+---
+
+## 🚀 安装
 
 > 先装好 [Claude Code](https://claude.ai/code)（`claude` 在 PATH 中）。装完**新开一个终端**。
 
@@ -97,7 +111,7 @@ xx --version  # 确认版本
 
 ---
 
-## 60 秒上手
+## ⏱ 60 秒上手
 
 首次运行 `xx` 会在 `~/.cc-mini/providers.json` 生成 9 个预设配置（官方 + 8 家第三方），**密钥为空**。
 
@@ -117,7 +131,7 @@ xx --help          # 全部参数
 
 ---
 
-## 两种模式（核心概念）
+## 🧭 两种模式（核心概念）
 
 Claude 用哪个 API 由**环境变量**决定。CC-X 提供两种作用范围：
 
@@ -136,7 +150,7 @@ Claude 用哪个 API 由**环境变量**决定。CC-X 提供两种作用范围�
 
 ---
 
-## 什么时候不该用 CC-X
+## 🚫 什么时候不该用 CC-X
 
 - 你需要管理 MCP、hooks、插件、多 CLI → 用 [cc-switch](https://github.com/farion1231/cc-switch)
 - 你只用官方 API，不切第三方 → 不需要 CC-X
@@ -146,7 +160,7 @@ CC-X 的边界比功能更重要。它只做一件事：**切 API**。
 
 ---
 
-## 设计哲学
+## 🧠 设计哲学
 
 > CC-X 的边界比功能更重要。
 
@@ -156,7 +170,7 @@ Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X �
 
 ---
 
-## 和 cc-switch 怎么选
+## ⚖️ 和 cc-switch 怎么选
 
 cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 
@@ -173,7 +187,7 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 
 ---
 
-## 配置说明
+## ⚙️ 配置说明
 
 ### 字段一览
 
@@ -226,7 +240,7 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 
 ---
 
-## 数据与文件
+## 💾 数据与文件
 
 - **配置（含明文密钥，勿外传）**：`~/.cc-mini/providers.json`（也存界面语言 `lang`、更新检查 `update`）
 - **供应商目录**：随工具发布的 `presets.json`；`~/.cc-mini/presets.json` 可覆盖
@@ -242,7 +256,7 @@ API 切换只动这 10 个「受管」环境变量，切换时清掉目标不用
 
 ---
 
-## FAQ
+## ❓ FAQ
 
 **一个终端切了，影响另一个吗？** 不影响。「本次启用」进程级，「设为默认」只对新终端生效。
 
@@ -256,7 +270,7 @@ API 切换只动这 10 个「受管」环境变量，切换时清掉目标不用
 
 ---
 
-## 卸载
+## 🗑 卸载
 
 1. 先清环境变量：`xx` → 选「官方」→ 设为默认
 2. 卸载本体：
@@ -275,6 +289,21 @@ API 切换只动这 10 个「受管」环境变量，切换时清掉目标不用
 
 ---
 
-## 许可
+## 📁 项目结构
+
+```
+cmd/               Go 命令行入口（xx、tui-probe）
+internal/          核心实现：配置、环境变量、平台适配、TUI、自更新等
+src/               npm 版源码（TypeScript）
+scripts/           构建发布脚本
+docs/screenshots/  界面截图
+presets.json       供应商预置目录（可用 ~/.cc-mini/presets.json 覆盖）
+install.ps1 / install.sh   各平台安装器
+CHANGELOG.md       变更记录
+```
+
+---
+
+## 📄 许可
 
 [MIT](LICENSE)
