@@ -17,6 +17,9 @@ const (
 	KeyEnter
 	KeyEsc
 	KeyBackspace
+	KeyDelete
+	KeyHome
+	KeyEnd
 	KeyCtrlC
 	KeyPgUp
 	KeyPgDn
@@ -84,12 +87,26 @@ func parseEsc(b []byte) Key {
 		return Key{Type: KeyRight}
 	case 'D':
 		return Key{Type: KeyLeft}
+	case 'H':
+		return Key{Type: KeyHome} // ESC[H / ESC OH
+	case 'F':
+		return Key{Type: KeyEnd} // ESC[F / ESC OF
 	case '~':
 		switch body {
+		case "1":
+			return Key{Type: KeyHome} // VT100 风格 ESC[1~
+		case "3":
+			return Key{Type: KeyDelete}
+		case "4":
+			return Key{Type: KeyEnd} // VT100 风格 ESC[4~
 		case "5":
 			return Key{Type: KeyPgUp}
 		case "6":
 			return Key{Type: KeyPgDn}
+		case "7":
+			return Key{Type: KeyHome} // rxvt 风格 ESC[7~
+		case "8":
+			return Key{Type: KeyEnd} // rxvt 风格 ESC[8~
 		}
 	}
 	return Key{Type: KeyUnknown}
