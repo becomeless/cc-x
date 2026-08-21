@@ -1,7 +1,8 @@
 // `xx update` 自更新的实现：实时查最新版 → 下载当前平台资产 → 校验 sha256 → 解压 →
 // 原地替换自身二进制（Windows 走 install.ps1 的三步 rename 大法，Unix 直接原子 rename）。
 //
-// 与包内既有代码同风格：网络一律走 curl 子进程（不引入 net/http）；只写临时目录与
+// 与包内既有代码同风格：网络走 curl 子进程（curl 的 -f/-sSL/退出码语义已有测试对齐；net/http 虽已被
+// presets.FetchModels 引入二进制，但迁移无体积收益、却要重对齐这些行为，故维持现状）；只写临时目录与
 // 二进制所在目录，不碰任何 Claude Code 配置（铁律）。下载不写 Zone.Identifier，
 // 新二进制首次运行不会触发 SmartScreen 网络来源拦截。
 package update

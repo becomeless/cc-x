@@ -4,7 +4,9 @@
 // 设计：显示永远读缓存（瞬时、不阻塞），过期时后台异步刷新——所以新版本「下次打开」才提示，
 // 与用户预期一致。离线/失败一律静默。只写工具自己的 ~/.cc-mini/，不碰任何 Claude Code 配置（铁律）。
 //
-// 网络请求通过 curl 子进程完成（exec.CommandContext），避免引入 net/http 拉入整个 TLS/加密栈。
+// 网络请求通过 curl 子进程完成（exec.CommandContext）。注意「省 TLS 栈」不是理由——net/http
+// 已被 presets.FetchModels 引入二进制；这里保留 curl 是因为 302 抠版本号（--max-redirs 0 +
+// %{redirect_url}）、超时与失败静默的语义已在此固化并有测试对齐，迁移无体积收益却要重对齐这些行为。
 // curl 在所有目标平台均可用：Windows 10 1803+ 内置 curl.exe；macOS/Linux 系统自带。
 package update
 
