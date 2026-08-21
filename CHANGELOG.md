@@ -1,5 +1,10 @@
 # 更新日志
 
+## v0.4.28 — 2026-08-21
+
+- 调整：effort 档位注入方式由环境变量改为启动参数 `--effort`——官方机制下 `CLAUDE_CODE_EFFORT_LEVEL` 优先于 `/effort` 和 `effortLevel` 设置，注入环境变量会锁死会话内切换；现为「每配置默认档 + 会话内 `/effort` 自由切换」。受管键 10 → 9（`CLAUDE_CODE_EFFORT_LEVEL` 移出，仍存于配置 env 表，编辑表单/菜单状态显示不变）；设为默认不再持久化 effort（low~xhigh 由 `/effort` 自身跨会话持久）；`auto`/留空=用模型默认、不传参（Go / TypeScript 双版本对齐，含 EffortArgs 单测）
+- 升级注意（仅老用户）：旧版「设为默认」可能把 `CLAUDE_CODE_EFFORT_LEVEL` 写进了用户环境，残留会继续锁死 `/effort`。清理：Windows 执行 `[Environment]::SetEnvironmentVariable('CLAUDE_CODE_EFFORT_LEVEL', $null, 'User')` 后新开终端；macOS/Linux 重跑一次「设为默认」即可（marker 块整体重写）
+
 ## v0.4.27 — 2026-08-18
 
 - 修复：手动输入字段（模型名/密钥/子代理）快速输入丢键——Go 版一次 read 带回多个按键时只认第一个字节，导致「保存后少一两个字母」「退格删不干净」；现逐键处理整段字节（TS 版 Node keypress 本就逐键派发，无此问题）

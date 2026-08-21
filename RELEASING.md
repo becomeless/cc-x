@@ -100,7 +100,7 @@ xx --list
 - `xx --version` 为新版本；`xx --list` 能读到现有 `~/.cc-mini/providers.json`。
 - Windows：`Get-Command xx` 指向 `%LOCALAPPDATA%\Programs\ccx\xx.exe`（或用户自定义目录）。
 - macOS / Linux：`command -v xx` 指向 `~/.local/bin/xx`（或 `CCX_INSTALL_DIR`）。
-- `xx <name>` 能继承真实 TTY 拉起 `claude`；切到「官方」只清理 7 个受管环境变量，不写任何 Claude Code 配置文件。
+- `xx <name>` 能继承真实 TTY 拉起 `claude`；切到「官方」只清理 9 个受管环境变量（effort 走 `--effort` 参数，非环境变量），不写任何 Claude Code 配置文件。
 
 ## 5. 回滚
 
