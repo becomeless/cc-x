@@ -9,7 +9,7 @@ import (
 	"github.com/becomeless/cc-x/internal/config"
 )
 
-// ManagedVals 是受管键 -> 值；空字符串表示「清除该键」。始终包含全部 10 个受管键。
+// ManagedVals 是受管键 -> 值；空字符串表示「清除该键」。始终包含全部 9 个受管键。
 type ManagedVals map[string]string
 
 // ComputeManagedVals 给定配置，算出每个受管键的「设值或清除」。
