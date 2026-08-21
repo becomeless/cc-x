@@ -154,6 +154,27 @@ async function pickSlotModel(
   return { changed: true, value: model };
 }
 
+/** 子代理行的选择菜单（对齐 Go 版 pickSubagentModel。官方文档 sub-agents#choose-a-model：
+ *  CLAUDE_CODE_SUBAGENT_MODEL 接受档位别名 opus/sonnet/haiku/fable 或完整模型名，且优先于
+ *  每次调用的 model 参数与子代理 frontmatter；不设置 = inherit（v2.1.196 起同义）。
+ *  此处只经选择提供：默认（清空）与四个档位别名；想指定档位表之外的完整模型名，可先把对应档位
+ *  映射成该模型再选档位别名。 */
+async function pickSubagentModel(current: string): Promise<{ changed: boolean; value: string }> {
+  const cur = current === '' ? T('edit.default') : current;
+  const labels = [T('edit.default'), 'opus', 'sonnet', 'haiku', 'fable'];
+  const vals = ['', 'opus', 'sonnet', 'haiku', 'fable'];
+  const start = Math.max(0, vals.indexOf(current));
+  const sel = await selectMenu({
+    title: `${T('edit.field.subagent').trim()}（当前：${cur}）`,
+    items: labels,
+    start,
+    hint: T('pick.hint'),
+    noNumber: true,
+  });
+  if (sel < 0) return { changed: false, value: current };
+  return { changed: true, value: vals[sel] ?? current };
+}
+
 function fromProvider(p: Provider): WorkCopy {
   const m = getProviderEnvMap(p);
   const usesApiKey = Boolean(m.ANTHROPIC_API_KEY && m.ANTHROPIC_API_KEY.trim());
@@ -304,7 +325,7 @@ export async function editForm(prov: Provider, store: Store, catalog: Preset[], 
         break;
       }
       case 'subagent': {
-        const r = await readValue(T('edit.field.subagent').trim(), W.subagent);
+        const r = await pickSubagentModel(W.subagent);
         if (r.changed) W.subagent = r.value;
         break;
       }

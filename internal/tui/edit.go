@@ -199,6 +199,32 @@ func pickSlotModel(t *Terminal, w *workCopy, catalog []presets.Preset, slot, lab
 	return true, model, nil
 }
 
+// pickSubagentModel 子代理行的选择菜单（官方文档 sub-agents#choose-a-model：CLAUDE_CODE_SUBAGENT_MODEL
+// 接受档位别名 opus/sonnet/haiku/fable 或完整模型名，且优先于每次调用的 model 参数与子代理 frontmatter；
+// 不设置 = inherit（v2.1.196 起同义，按「调用参数 → frontmatter → 主对话模型」解析）。
+// 此处只经选择提供：默认（清空）与四个档位别名；想指定档位表之外的完整模型名，可先把对应档位
+// 映射成该模型再选档位别名。
+func pickSubagentModel(t *Terminal, current string) (bool, string) {
+	cur := current
+	if cur == "" {
+		cur = i18n.T("edit.default")
+	}
+	labels := []string{i18n.T("edit.default"), "opus", "sonnet", "haiku", "fable"}
+	vals := []string{"", "opus", "sonnet", "haiku", "fable"}
+	start := 0
+	for i, v := range vals {
+		if v == current {
+			start = i
+			break
+		}
+	}
+	sel := SelectMenu(t, SelectOptions{Title: fmt.Sprintf("%s（当前：%s）", strings.TrimSpace(i18n.T("edit.field.subagent")), cur), Items: labels, Start: start, Hint: i18n.T("pick.hint"), NoNumber: true})
+	if sel < 0 {
+		return false, current
+	}
+	return true, vals[sel]
+}
+
 // EditForm 编辑 prov（就地修改）；保存返回 true，放弃返回 false。对应 npm 版 editForm。
 // 密钥行默认掩码，「👁 显示/隐藏」仅切换本表单显示、不改数据、不持久化。
 // focusKey=true 时初始光标落在密钥行（#9：无 key 配置 Enter 直达填密钥的最短路径）。
@@ -349,7 +375,7 @@ func EditForm(t *Terminal, prov *config.Provider, store *config.Store, catalog [
 				status = ""
 			}
 		case "subagent":
-			if ch, val := ReadValue(t, strings.TrimSpace(i18n.T("edit.field.subagent")), w.subagent, false); ch {
+			if ch, val := pickSubagentModel(t, w.subagent); ch {
 				w.subagent = val
 			}
 		case "effort":
