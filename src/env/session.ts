@@ -1,7 +1,9 @@
 /**
  * 本次启用（Session-Launch）—— 进程级、阅后即焚。
  *
- * 1) 对 9 个受管键：有值 set，没值 delete（只动这 9 个）。
+ * 1) 对 9 个受管键：有值 set，没值 delete（只动这 9 个）。effort 不在其中，改走 --effort 启动参数
+ *    （见 effortArgs）——官方机制下 CLAUDE_CODE_EFFORT_LEVEL 环境变量优先于 /effort，注入会锁死
+ *    会话内切换；--effort 是官方「会话级默认、不持久、可被 /effort 覆盖」的渠道。
  * 2) 找到 claude（which；Windows 上是 claude.cmd，评审②）。
  * 3) spawn 且 stdio:inherit —— 子进程继承真实控制台句柄，天然没有现版 PowerShell 的
  *    「stdin 被包成管道 → claude 误判非交互」问题。
@@ -20,6 +22,12 @@ export function applyManagedEnv(p: Provider): void {
     if (typeof v === 'string' && v.trim() !== '') process.env[key] = v;
     else delete process.env[key];
   }
+}
+
+/** 该配置启动 claude 时要附加的 effort 参数（--effort <档>），无档返回空数组。auto 与留空都用模型默认，不传参。 */
+function effortArgs(p: Provider): string[] {
+  const v = (getProviderEnvMap(p).CLAUDE_CODE_EFFORT_LEVEL ?? '').trim();
+  return v !== '' && v !== 'auto' ? ['--effort', v] : [];
 }
 
 /** 在 PATH 中定位 claude；找不到返回 null。Windows 下通常解析到 claude.cmd。 */
@@ -48,7 +56,7 @@ export function sessionLaunch(p: Provider, claudePath?: string): LaunchResult {
   const isWin = process.platform === 'win32';
   // Windows：经 cmd.exe 启动以兼容 .cmd 包装，路径加引号防空格；Unix：直接 exec 解析后的真实路径。
   const file = isWin ? `"${bin}"` : bin;
-  const res = spawnSync(file, [], { stdio: 'inherit', shell: isWin });
+  const res = spawnSync(file, effortArgs(p), { stdio: 'inherit', shell: isWin });
   if (res.error) return { spawnError: res.error, status: null };
   return { status: res.status };
 }

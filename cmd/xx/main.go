@@ -245,15 +245,16 @@ func launchSession(p config.Provider) int {
 		return 1
 	}
 	env.ApplyManaged(p)
+	args := env.EffortArgs(p)
 	if runtime.GOOS != "windows" {
 		// banner 已打印（os.Stdout 直写无缓冲）；exec 成功则永不返回，退出码由 claude 本体透传。
-		if err := launch.LaunchSessionExec(bin); err != nil {
+		if err := launch.LaunchSessionExec(bin, args...); err != nil {
 			fmt.Fprintf(os.Stderr, "  %s\n", err.Error())
 			return 1
 		}
 		return 0 // 不可达：exec 成功则进程已被替换
 	}
-	code, err := launch.LaunchSession(bin)
+	code, err := launch.LaunchSession(bin, args...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "  %s\n", err.Error())
 		return 1

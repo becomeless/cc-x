@@ -4,7 +4,13 @@
  * 数据格式必须与现版 PowerShell 完全兼容（老用户的 ~/.cc-mini/providers.json 能直接读）。
  */
 
-/** 受管的 10 个环境变量（工具只动这些，其它一律不碰）。详见 plan §2。 */
+/**
+ * 受管的 9 个环境变量（工具只动这些，其它一律不碰）。详见 plan §2。
+ *
+ * `CLAUDE_CODE_EFFORT_LEVEL` 刻意不在其中：官方机制下该变量优先于 /effort，注入会锁死会话内切换，
+ * 故 effort 改为启动参数 `--effort` 传递（见 `env/session.ts` effortArgs）。它仍作为非受管键存在
+ * 配置的 env 表里（编辑表单与菜单状态都读它），仅注入渠道不同。
+ */
 export const KNOWN_KEYS = [
   'ANTHROPIC_BASE_URL',
   'ANTHROPIC_AUTH_TOKEN',
@@ -14,7 +20,6 @@ export const KNOWN_KEYS = [
   'ANTHROPIC_DEFAULT_HAIKU_MODEL',
   'ANTHROPIC_DEFAULT_FABLE_MODEL',
   'CLAUDE_CODE_SUBAGENT_MODEL',
-  'CLAUDE_CODE_EFFORT_LEVEL',
   'CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC',
 ] as const;
 

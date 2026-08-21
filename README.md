@@ -164,7 +164,7 @@ CC-X 的边界比功能更重要。它只做一件事：**切 API**。
 
 > CC-X 的边界比功能更重要。
 
-Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"——它只站在进程启动前那一小步：把 10 个受管环境变量准备好，然后让 Claude Code 自己工作。API 地址、密钥和模型映射只走环境变量，不写进 Claude Code 配置；不接管 MCP、插件、Hooks，不做后台常驻管理。
+Claude Code 已经有自己的配置系统、MCP 生态和会话状态。CC-X 不想再造一个"上层控制台"——它只站在进程启动前那一小步：把 9 个受管环境变量准备好，然后让 Claude Code 自己工作。API 地址、密钥和模型映射只走环境变量，不写进 Claude Code 配置；不接管 MCP、插件、Hooks，不做后台常驻管理。
 
 欢迎 Issue / PR，但方向很明确：**让切换更稳、更清楚、更不打扰用户**，比堆更多管理能力更重要。唯一允许的 Claude Code 配置写入是用户主动触发「一键免登录」时，把 `~/.claude.json` 顶层 `hasCompletedOnboarding` 设为 `true`：字节级最小原子修改，非法 JSON 拒写。这个例外不能扩展到 API、密钥、模型映射、MCP、插件、Hooks 或其它行为配置。
 
@@ -201,7 +201,7 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
 | haiku → 模型 | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
 | fable → 模型 | `ANTHROPIC_DEFAULT_FABLE_MODEL` | 最强档（如 Fable 5）；供应商没这档就留空 |
 | 子代理 → 模型 | `CLAUDE_CODE_SUBAGENT_MODEL` | 子代理/agent teams 用模型；**留空=不强制覆盖，未另行指定时继承主模型（Inherit）**。想省钱可填 `haiku`（别名，跟随本配置的 haiku 档）或具体模型名 |
-| effort 思考档 | `CLAUDE_CODE_EFFORT_LEVEL` | `low` ~ `max`；`auto`=模型默认；留空=不设。第三方不一定生效 |
+| effort 思考档 | 启动参数 `--effort`（存储键 `CLAUDE_CODE_EFFORT_LEVEL`） | `low` ~ `max`；`auto`=模型默认；留空=不设。**只作启动默认，会话内 `/effort` 可自由切换**（官方机制下该变量优先于 `/effort`，故不注入环境变量以免锁死）。第三方不一定生效 |
 | 禁用非核心流量 | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1`=禁用 Claude Code 非核心流量；留空=不设。GLM 预置为 `1` |
 
 > CC-X **刻意不设** `ANTHROPIC_MODEL`。在会话里用 `/model opus|sonnet|haiku|fable` 选档，映射表负责翻译成对应供应商的模型名。
@@ -249,8 +249,9 @@ cc-switch 是优秀的全能 GUI；CC-X 走相反的极简路线。
   - Unix → shell 启动文件 `# >>> xx >>>` … `# <<< xx <<<` 标记块（幂等重写，按 `$SHELL` 选文件）
   - 语义一致：**只影响新终端**；切到「官方」会清除全部受管变量
 
-API 切换只动这 10 个「受管」环境变量，切换时清掉目标不用的：
-`ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_API_KEY`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`ANTHROPIC_DEFAULT_FABLE_MODEL`、`CLAUDE_CODE_SUBAGENT_MODEL`、`CLAUDE_CODE_EFFORT_LEVEL`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`。
+API 切换只动这 9 个「受管」环境变量，切换时清掉目标不用的：
+`ANTHROPIC_BASE_URL`、`ANTHROPIC_AUTH_TOKEN`、`ANTHROPIC_API_KEY`、`ANTHROPIC_DEFAULT_OPUS_MODEL`、`ANTHROPIC_DEFAULT_SONNET_MODEL`、`ANTHROPIC_DEFAULT_HAIKU_MODEL`、`ANTHROPIC_DEFAULT_FABLE_MODEL`、`CLAUDE_CODE_SUBAGENT_MODEL`、`CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`。
+effort 思考档是例外：它仍存于配置的 env 表（`CLAUDE_CODE_EFFORT_LEVEL` 键），但注入方式为启动参数 `--effort`，不走环境变量——官方文档明确该变量优先于 `/effort`，注入会锁死会话内切换（见上方表格）。
 
 > 💡 需要改 `settings.json`？直接用 Claude Code 的 `/update-config` 说需求（如"允许 npm 命令"），比让外部工具改可靠。
 

@@ -28,7 +28,22 @@ func ComputeManagedVals(p config.Provider) ManagedVals {
 	return vals
 }
 
-// ApplyManaged 把目标配置的受管变量套到当前进程（有值 Setenv、没值 Unsetenv，只动这 10 个）。
+// EffortArgs 返回该配置启动 claude 时要附加的 effort 参数（--effort <档>），无档返回 nil。
+//
+// 为什么不用环境变量：官方文档（code.claude.com/docs/zh-CN/env-vars）明确
+// CLAUDE_CODE_EFFORT_LEVEL 优先于 /effort 和 effortLevel 设置——经环境变量注入会锁死
+// 会话内切换（提示 "CLAUDE_CODE_EFFORT_LEVEL=… overrides this session"）。而 --effort 是官方
+// 「会话级默认、不持久、可被 /effort 覆盖」的渠道（cli-reference），正合「每配置默认档 + 会话内自由切换」。
+// auto 与留空都表示用模型默认，不传参。
+func EffortArgs(p config.Provider) []string {
+	v := strings.TrimSpace(config.GetProviderEnvMap(p)["CLAUDE_CODE_EFFORT_LEVEL"])
+	if v == "" || v == "auto" {
+		return nil
+	}
+	return []string{"--effort", v}
+}
+
+// ApplyManaged 把目标配置的受管变量套到当前进程（有值 Setenv、没值 Unsetenv，只动这 9 个）。
 // 本次启用用：之后 exec 出的 claude 子进程会继承当前进程环境。对齐 npm 版 applyManagedEnv。
 func ApplyManaged(p config.Provider) {
 	m := config.GetProviderEnvMap(p)

@@ -279,6 +279,8 @@ func GetProviderEnvMap(p Provider) map[string]string {
 
 // BuildProviderEnv 由一组字段构造 provider.env：按 KnownKeys 顺序、丢弃空白值（trim 后存）。
 // `[1m]` 等后缀属于自由文本，原样保留（见 plan §3.1.1）。
+// effort 已不是受管键（改走 --effort 启动参数，见 env.EffortArgs），但仍存在 env 表的
+// CLAUDE_CODE_EFFORT_LEVEL 键（编辑表单行与菜单状态显示都读它），这里显式带上。
 func BuildProviderEnv(fields map[string]string) map[string]string {
 	env := map[string]string{}
 	for _, key := range knownKeys {
@@ -286,6 +288,9 @@ func BuildProviderEnv(fields map[string]string) map[string]string {
 		if nonEmpty(v) {
 			env[key] = strings.TrimSpace(v)
 		}
+	}
+	if v := fields["CLAUDE_CODE_EFFORT_LEVEL"]; nonEmpty(v) {
+		env["CLAUDE_CODE_EFFORT_LEVEL"] = strings.TrimSpace(v)
 	}
 	return env
 }

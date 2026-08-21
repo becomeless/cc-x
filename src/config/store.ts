@@ -207,6 +207,8 @@ export function getProviderEnvMap(p: Provider): Record<string, string> {
 /**
  * 由一组字段构造 provider.env：按 KNOWN_KEYS 顺序、丢弃空白值。
  * 对齐现版 Build-ProviderEnv。`[1m]` 等后缀属于自由文本，原样保留（见 plan §3.1.1）。
+ * effort 已不是受管键（改走 --effort 启动参数，见 env/session.ts effortArgs），但仍存在 env 表的
+ * CLAUDE_CODE_EFFORT_LEVEL 键（编辑表单行与菜单状态显示都读它），这里显式带上。
  */
 export function buildProviderEnv(fields: Record<string, string | undefined>): Record<string, string> {
   const env: Record<string, string> = {};
@@ -214,6 +216,8 @@ export function buildProviderEnv(fields: Record<string, string | undefined>): Re
     const v = fields[key];
     if (nonEmpty(v)) env[key] = v.trim();
   }
+  const effort = fields.CLAUDE_CODE_EFFORT_LEVEL;
+  if (nonEmpty(effort)) env.CLAUDE_CODE_EFFORT_LEVEL = effort.trim();
   return env;
 }
 
