@@ -1,5 +1,9 @@
 # 更新日志
 
+## v0.4.29 — 2026-08-21
+
+- 新增：编辑表单子代理行由自由输入改为纯选择菜单（默认/opus/sonnet/haiku/fable）——官方文档 sub-agents#choose-a-model：`CLAUDE_CODE_SUBAGENT_MODEL` 接受档位别名或完整模型名，不设置 = inherit（v2.1.196 起同义，解析顺序「该变量 → 调用参数 → frontmatter → 主对话模型」）；档位表外的完整模型名可先映射到某档再选该档别名（Go / TypeScript 双版本对齐）
+
 ## v0.4.28 — 2026-08-21
 
 - 调整：effort 档位注入方式由环境变量改为启动参数 `--effort`——官方机制下 `CLAUDE_CODE_EFFORT_LEVEL` 优先于 `/effort` 和 `effortLevel` 设置，注入环境变量会锁死会话内切换；现为「每配置默认档 + 会话内 `/effort` 自由切换」。受管键 10 → 9（`CLAUDE_CODE_EFFORT_LEVEL` 移出，仍存于配置 env 表，编辑表单/菜单状态显示不变）；设为默认不再持久化 effort（low~xhigh 由 `/effort` 自身跨会话持久）；`auto`/留空=用模型默认、不传参（Go / TypeScript 双版本对齐，含 EffortArgs 单测）
