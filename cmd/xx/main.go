@@ -1,6 +1,6 @@
 // Command xx 是 ccx 的 Go 原生入口：解析参数 -> 分派到 CLI 路径或交互菜单。
 //
-// 铁律：API、密钥和模型映射只走 10 个受管环境变量；唯一配置写入是用户主动触发的 onboarding 布尔字段。
+// 铁律：API、密钥和模型映射只走 9 个受管环境变量（effort 走 --effort 启动参数，见 env.EffortArgs）；唯一配置写入是用户主动触发的 onboarding 布尔字段。
 package main
 
 import (
@@ -245,15 +245,16 @@ func launchSession(p config.Provider) int {
 		return 1
 	}
 	env.ApplyManaged(p)
+	args := env.EffortArgs(p)
 	if runtime.GOOS != "windows" {
 		// banner 已打印（os.Stdout 直写无缓冲）；exec 成功则永不返回，退出码由 claude 本体透传。
-		if err := launch.LaunchSessionExec(bin); err != nil {
+		if err := launch.LaunchSessionExec(bin, args...); err != nil {
 			fmt.Fprintf(os.Stderr, "  %s\n", err.Error())
 			return 1
 		}
 		return 0 // 不可达：exec 成功则进程已被替换
 	}
-	code, err := launch.LaunchSession(bin)
+	code, err := launch.LaunchSession(bin, args...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "  %s\n", err.Error())
 		return 1

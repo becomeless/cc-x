@@ -19,20 +19,21 @@ func ResolveClaude() (string, bool) {
 }
 
 // LaunchSession 启动 claude（路径 bin），继承当前进程的 stdin/stdout/stderr 与环境，阻塞至退出，返回其退出码。
+// args 追加到 claude 的命令行（如 --effort high，见 env.EffortArgs）。
 // 调用方须先 env.ApplyManaged 设好受管环境（子进程继承）。
 //
 // Windows 注意：.cmd / .bat 不是 PE 可执行文件，不能直接 CreateProcess，必须经 cmd.exe /c 启动
 // （npm 安装的 claude 常是 claude.cmd；原生安装是 claude.exe，可直接 exec）。详见 plan §2.5.3 / §12。
-func LaunchSession(bin string) (int, error) {
+func LaunchSession(bin string, args ...string) (int, error) {
 	var cmd *exec.Cmd
 	if runtime.GOOS == "windows" && isCmdScript(bin) {
 		comspec := os.Getenv("ComSpec")
 		if comspec == "" {
 			comspec = "cmd.exe"
 		}
-		cmd = exec.Command(comspec, "/d", "/s", "/c", bin)
+		cmd = exec.Command(comspec, append([]string{"/d", "/s", "/c", bin}, args...)...)
 	} else {
-		cmd = exec.Command(bin)
+		cmd = exec.Command(bin, args...)
 	}
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout

@@ -10,9 +10,13 @@ import (
 	"sort"
 )
 
-// knownKeys 是受管的 10 个环境变量（工具只动这些，其它一律不碰），顺序即写盘顺序。
+// knownKeys 是受管的 9 个环境变量（工具只动这些，其它一律不碰），顺序即写盘顺序。
 //
-// 故意私有：这 10 个键是项目铁律的一部分，若导出且可变，任何包都能 append / 改元素，
+// CLAUDE_CODE_EFFORT_LEVEL 刻意不在其中：官方机制下该变量优先于 /effort，注入会锁死会话内切换，
+// 故 effort 改为启动参数 --effort 传递（见 env.EffortArgs）。它仍作为非受管键存在配置的 env 表里
+// （编辑表单与菜单状态都读它），仅注入渠道不同。
+//
+// 故意私有：这 9 个键是项目铁律的一部分，若导出且可变，任何包都能 append / 改元素，
 // 导致 env 清理范围和 JSON 键顺序悄悄漂。对外只经 ManagedKeys() 暴露副本。
 var knownKeys = []string{
 	"ANTHROPIC_BASE_URL",
@@ -23,7 +27,6 @@ var knownKeys = []string{
 	"ANTHROPIC_DEFAULT_HAIKU_MODEL",
 	"ANTHROPIC_DEFAULT_FABLE_MODEL",
 	"CLAUDE_CODE_SUBAGENT_MODEL",
-	"CLAUDE_CODE_EFFORT_LEVEL",
 	"CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
 }
 

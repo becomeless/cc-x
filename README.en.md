@@ -203,7 +203,7 @@ cc-switch is an excellent full-featured GUI; CC-X takes the opposite, minimal ap
 
 > CC-X cares more about boundaries than features.
 
-Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 10 managed environment variables, then let Claude Code run.
+Claude Code already has its own config system, MCP ecosystem, and session state. CC-X is not trying to become a control panel above it, or to copy user config into another database. It stands at one narrow point before Claude Code starts: prepare the 9 managed environment variables, then let Claude Code run.
 
 That constraint is deliberate: API endpoints, credentials, and model mappings never go into Claude Code config files; there is no MCP/plugin/hook management, automatic migration, or resident background controller. The only Claude Code config mutation is the explicit "Skip login" action described below, limited to one onboarding boolean. Doing less keeps the failure surface small.
 
@@ -225,7 +225,7 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
 | haiku → model | `ANTHROPIC_DEFAULT_HAIKU_MODEL` | |
 | fable → model | `ANTHROPIC_DEFAULT_FABLE_MODEL` | Top tier (e.g. Fable 5); leave empty if the provider has none |
 | subagent → model | `CLAUDE_CODE_SUBAGENT_MODEL` | Model for subagents/agent teams; **empty = do not force an override; inherit the main model when no other model is specified**. To save cost, fill `haiku` (alias, follows this profile's haiku tier) or a concrete model ID |
-| effort level | `CLAUDE_CODE_EFFORT_LEVEL` | `low`–`max`; `auto` = model default; empty = unset. Third parties may not honor it |
+| effort level | launch flag `--effort` (stored under key `CLAUDE_CODE_EFFORT_LEVEL`) | `low`–`max`; `auto` = model default; empty = unset. **Acts as the launch default only — `/effort` can switch freely in-session** (officially this env var outranks `/effort`, so it is not injected as a variable, to avoid locking the session). Third parties may not honor it |
 | Disable nonessential traffic | `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC` | `1` disables nonessential Claude Code traffic; empty = unset. Zhipu GLM defaults to `1` |
 
 > CC-X **deliberately does not set** `ANTHROPIC_MODEL`. Use `/model opus|sonnet|haiku|fable` in-session;
@@ -291,10 +291,13 @@ Issues / PRs are welcome, but the direction is clear: **make switching steadier,
   `hasCompletedOnboarding` boolean in `~/.claude.json` (byte-level minimal atomic edit; invalid JSON
   is refused). It never writes API/model settings, MCP, plugins, or hooks.
 
-CC-X only touches these 10 "managed" variables (and clears the ones a target profile doesn't use):
+CC-X only touches these 9 "managed" variables (and clears the ones a target profile doesn't use):
 `ANTHROPIC_BASE_URL`, `ANTHROPIC_AUTH_TOKEN`, `ANTHROPIC_API_KEY`, `ANTHROPIC_DEFAULT_OPUS_MODEL`,
 `ANTHROPIC_DEFAULT_SONNET_MODEL`, `ANTHROPIC_DEFAULT_HAIKU_MODEL`, `ANTHROPIC_DEFAULT_FABLE_MODEL`,
-`CLAUDE_CODE_SUBAGENT_MODEL`, `CLAUDE_CODE_EFFORT_LEVEL`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`.
+`CLAUDE_CODE_SUBAGENT_MODEL`, `CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC`.
+The effort level is the one exception: it is still stored in the profile's env table (key `CLAUDE_CODE_EFFORT_LEVEL`),
+but injected as the `--effort` launch flag rather than an environment variable — the official docs state this
+variable outranks `/effort`, and injecting it would lock in-session switching (see the table above).
 
 > 💡 To change `settings.json`, use Claude Code's own `/update-config` and describe what you want
 > in natural language (e.g. "allow npm commands") — safer than letting an external tool rewrite it.

@@ -309,7 +309,7 @@ func tuiLaunchSession(p config.Provider) {
 		return
 	}
 	env.ApplyManaged(p)
-	_, _ = launch.LaunchSession(bin)
+	_, _ = launch.LaunchSession(bin, env.EffortArgs(p)...)
 }
 
 const rowNameW = 13 // 名字列宽（显示宽度，CJK 计 2）；状态/备注列宽按内容动态算

@@ -17,7 +17,7 @@ func sampleVals() env.ManagedVals {
 		"ANTHROPIC_DEFAULT_OPUS_MODEL":   "deepseek-v4-pro",
 		"ANTHROPIC_DEFAULT_SONNET_MODEL": "",
 		"ANTHROPIC_DEFAULT_HAIKU_MODEL":  "",
-		"CLAUDE_CODE_EFFORT_LEVEL":       "max",
+		// effort 不走设为默认（CLAUDE_CODE_EFFORT_LEVEL 已非受管键，改走 --effort 启动参数）
 	}
 }
 
@@ -28,7 +28,6 @@ func TestBuildBlockOrderAndContent(t *testing.T) {
 		"export ANTHROPIC_BASE_URL='https://api.deepseek.com/anthropic'",
 		"export ANTHROPIC_AUTH_TOKEN='sk-1'",
 		"export ANTHROPIC_DEFAULT_OPUS_MODEL='deepseek-v4-pro'",
-		"export CLAUDE_CODE_EFFORT_LEVEL='max'",
 		"# <<< xx <<<",
 	}, "\n")
 	if got != want {
