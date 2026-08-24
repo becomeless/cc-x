@@ -1,5 +1,9 @@
 # 更新日志
 
+## v0.4.30 — 2026-08-23
+
+- 修复：选择菜单超过屏幕高度时选中项滚出视口、上下移动「屏幕不动」——`SelectMenu` 原把整棵列表全画出，`CursorUp(prevLines-1)` 的 prevLines 超过屏高后光标被钳在顶部、高亮项移到屏外（OpenRouter 等供应商模型列表数百项即触发）。现按终端可视高度做滑动窗口，保证选中项始终可见，溢出时底部追加 dim 位置指示（`idx+1 / N`）；预留 1 行防光标落底行引发回滚抖动。Go / TypeScript 双版本对齐（含 scrollWindow 边界/不变量单测）
+
 ## v0.4.29 — 2026-08-21
 
 - 新增：编辑表单子代理行由自由输入改为纯选择菜单（默认/opus/sonnet/haiku/fable）——官方文档 sub-agents#choose-a-model：`CLAUDE_CODE_SUBAGENT_MODEL` 接受档位别名或完整模型名，不设置 = inherit（v2.1.196 起同义，解析顺序「该变量 → 调用参数 → frontmatter → 主对话模型」）；档位表外的完整模型名可先映射到某档再选该档别名（Go / TypeScript 双版本对齐）
