@@ -91,8 +91,8 @@ export const BUILTIN_PRESETS: Preset[] = [
     name: '阿里百炼',
     auth: 'AUTH_TOKEN',
     urls: [
-      { label: 'Token Plan', url: 'https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic' },
-      { label: 'Coding Plan', url: 'https://coding.dashscope.aliyuncs.com/apps/anthropic' },
+      { label: 'Token Plan（个人/团队）', url: 'https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic' },
+      { label: '按量付费', url: 'https://dashscope.aliyuncs.com/apps/anthropic' },
     ],
     models: { opus: 'qwen3.8-max', sonnet: 'qwen3.8-max', haiku: 'qwen3.6-flash', fable: 'qwen3.8-max' },
     models1m: ['qwen3.8-max', 'qwen3.7-max', 'qwen3.7-plus'],

@@ -1,5 +1,9 @@
 # 更新日志
 
+## v0.4.31 — 2026-08-24
+
+- 调整：阿里百炼（通义千问）预设同步官方最新计费——「Coding Plan」地址（`coding.dashscope.aliyuncs.com`）已下线，改为官方「按量付费」`https://dashscope.aliyuncs.com/apps/anthropic`；Token Plan 标签标注「个人/团队」共用同一地址（个人版与团队版仅 API Key 不同）（Go / TypeScript 双版本对齐）
+
 ## v0.4.30 — 2026-08-23
 
 - 修复：选择菜单超过屏幕高度时选中项滚出视口、上下移动「屏幕不动」——`SelectMenu` 原把整棵列表全画出，`CursorUp(prevLines-1)` 的 prevLines 超过屏高后光标被钳在顶部、高亮项移到屏外（OpenRouter 等供应商模型列表数百项即触发）。现按终端可视高度做滑动窗口，保证选中项始终可见，溢出时底部追加 dim 位置指示（`idx+1 / N`）；预留 1 行防光标落底行引发回滚抖动。Go / TypeScript 双版本对齐（含 scrollWindow 边界/不变量单测）

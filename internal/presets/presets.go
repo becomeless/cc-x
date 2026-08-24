@@ -125,8 +125,8 @@ var BuiltinPresets = []Preset{
 		Name: "阿里百炼",
 		Auth: AuthToken,
 		URLs: []URL{
-			{Label: "Token Plan", URL: "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic"},
-			{Label: "Coding Plan", URL: "https://coding.dashscope.aliyuncs.com/apps/anthropic"},
+			{Label: "Token Plan（个人/团队）", URL: "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic"},
+			{Label: "按量付费", URL: "https://dashscope.aliyuncs.com/apps/anthropic"},
 		},
 		Models:   Models{Opus: "qwen3.8-max", Sonnet: "qwen3.8-max", Haiku: "qwen3.6-flash", Fable: "qwen3.8-max"},
 		Models1M: []string{"qwen3.8-max", "qwen3.7-max", "qwen3.7-plus"},
