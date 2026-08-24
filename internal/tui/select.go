@@ -80,6 +80,7 @@ func SelectMenu(t *Terminal, opts SelectOptions) int {
 			lines = append(lines, "")
 		}
 		headerN := len(lines)
+		rows := termHeight(t) // 关键帧只查一次终端高度，避免每帧两次 syscall（对齐 TS 缓存 rows）
 
 		// 项窗口行数 = 终端可视高度 - 头部 - 尾部；预留 1 行，避免光标落在底行时回滚抖动。
 		footerBase := 1
@@ -87,7 +88,7 @@ func SelectMenu(t *Terminal, opts SelectOptions) int {
 			footerBase = 2
 		}
 		// 先按「未加位置指示」估视口，判断 item 数是否溢出（会话内 item 数固定，此判断稳定）。
-		baseViewH := termHeight(t) - headerN - footerBase - 1
+		baseViewH := rows - headerN - footerBase - 1
 		if baseViewH < 1 {
 			baseViewH = 1
 		}
@@ -98,7 +99,7 @@ func SelectMenu(t *Terminal, opts SelectOptions) int {
 			indicator = strconv.Itoa(idx+1) + " / " + strconv.Itoa(len(items))
 			footerN++
 		}
-		viewH := termHeight(t) - headerN - footerN - 1
+		viewH := rows - headerN - footerN - 1
 		if viewH < 1 {
 			viewH = 1
 		}

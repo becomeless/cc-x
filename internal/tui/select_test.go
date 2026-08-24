@@ -29,3 +29,20 @@ func TestScrollWindow(t *testing.T) {
 		}
 	}
 }
+
+// 穷举不变量：任意合法输入（含越界的 top）下选中项必可见，窗口不越界（对齐 TS 版用例）。
+func TestScrollWindowInvariant(t *testing.T) {
+	for _, n := range []int{4, 20, 100} {
+		for _, viewH := range []int{1, 5, 25} {
+			for idx := 0; idx < n; idx++ {
+				start, end := scrollWindow(50, idx, viewH, n)
+				if idx < start || idx >= end {
+					t.Errorf("n=%d viewH=%d idx=%d → [%d,%d) 未包含选中项", n, viewH, idx, start, end)
+				}
+				if start < 0 || end > n || start > end {
+					t.Errorf("n=%d viewH=%d idx=%d → 窗口 [%d,%d) 越界", n, viewH, idx, start, end)
+				}
+			}
+		}
+	}
+}
