@@ -60,7 +60,9 @@ func SelectMenu(t *Terminal, opts SelectOptions) int {
 	t.Write(ClearScreen + HideCursor)
 
 	prevLines := 0
+	top := 0 // 滚动窗口首项下标：保证选中项 idx 始终落在窗口内，随上下移动滑窗
 	render := func() {
+		// 头部（标题/横幅/toast）固定，随整棵菜单一起重绘，但不计入滚动窗口。
 		lines := []string{""}
 		if opts.Title != "" {
 			lines = append(lines, "  "+Paint(opts.Title, ColorCyan), "")
@@ -77,7 +79,36 @@ func SelectMenu(t *Terminal, opts SelectOptions) int {
 			}
 			lines = append(lines, "")
 		}
-		for i, it := range items {
+		headerN := len(lines)
+
+		// 项窗口行数 = 终端可视高度 - 头部 - 尾部；预留 1 行，避免光标落在底行时回滚抖动。
+		footerBase := 1
+		if opts.Hint != "" {
+			footerBase = 2
+		}
+		// 先按「未加位置指示」估视口，判断 item 数是否溢出（会话内 item 数固定，此判断稳定）。
+		baseViewH := termHeight(t) - headerN - footerBase - 1
+		if baseViewH < 1 {
+			baseViewH = 1
+		}
+		scrollable := len(items) > baseViewH
+		footerN := footerBase
+		indicator := ""
+		if scrollable {
+			indicator = strconv.Itoa(idx+1) + " / " + strconv.Itoa(len(items))
+			footerN++
+		}
+		viewH := termHeight(t) - headerN - footerN - 1
+		if viewH < 1 {
+			viewH = 1
+		}
+		start, end := scrollWindow(top, idx, viewH, len(items))
+		top = start
+
+		// 项窗口：只渲染 [start,end)，选中项随滑窗保证可见。
+		//（原逻辑把整棵 items 全画出来，超过屏高后选中项滚出视口、屏上「不动」。）
+		for i := start; i < end; i++ {
+			it := items[i]
 			if it == "" {
 				lines = append(lines, "")
 				continue
@@ -97,6 +128,9 @@ func SelectMenu(t *Terminal, opts SelectOptions) int {
 			}
 		}
 		lines = append(lines, "")
+		if indicator != "" {
+			lines = append(lines, "  "+Paint(indicator, ColorDim))
+		}
 		if opts.Hint != "" {
 			lines = append(lines, "  "+Paint(opts.Hint, ColorDim))
 		}
@@ -180,6 +214,41 @@ func termWidth(t *Terminal) int {
 		return 80
 	}
 	return w
+}
+
+func termHeight(t *Terminal) int {
+	_, h, err := term.GetSize(int(t.Out.Fd()))
+	if err != nil || h <= 0 {
+		return 24
+	}
+	return h
+}
+
+// scrollWindow 计算滚动视图窗口 [start,end)：高 viewH 行，始终包含选中项 idx。
+// 优先保持先前 top 不动，仅当 idx 越界时才滑动；窗口向 [0,n] 内收敛（n 为 item 总数，含空分隔行）。
+func scrollWindow(top, idx, viewH, n int) (int, int) {
+	if viewH < 1 {
+		viewH = 1
+	}
+	if idx < top {
+		top = idx
+	} else if idx >= top+viewH {
+		top = idx - viewH + 1
+	}
+	if top < 0 {
+		top = 0
+	}
+	if top > n-viewH {
+		top = n - viewH
+	}
+	if top < 0 {
+		top = 0
+	}
+	end := top + viewH
+	if end > n {
+		end = n
+	}
+	return top, end
 }
 
 // fallbackSelect 非交互回退：打印列表 + 读一行序号。

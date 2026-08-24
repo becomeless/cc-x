@@ -48,7 +48,7 @@
     "dev": "tsx src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test src/check.test.ts src/runtime-info.test.ts src/claudecfg.test.ts src/config/models.test.ts src/update/update.test.ts src/ui/text.test.ts",
+    "test": "node --import tsx --test src/check.test.ts src/runtime-info.test.ts src/claudecfg.test.ts src/config/models.test.ts src/update/update.test.ts src/ui/text.test.ts src/ui/select.test.ts",
     "prepublishOnly": "npm run build"
   },
   "dependencies": {

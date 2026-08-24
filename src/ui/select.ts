@@ -62,8 +62,10 @@ export async function selectMenu(opts: SelectOptions): Promise<number> {
   stdout.write(CLEAR_SCREEN + HIDE_CURSOR); // 清屏归位，制造「整页」感（每进一级菜单都是新页）
 
   let prevLines = 0;
+  let top = 0; // 滚动窗口首项下标：保证选中项 idx 始终落在窗口内，随上下移动滑窗
   const render = (): void => {
     const cols = stdout.columns ?? 80;
+    const rows = stdout.rows ?? 24;
     const lines: string[] = [''];
     if (opts.title) {
       lines.push(`  ${paint(opts.title, 'cyan')}`, '');
@@ -76,7 +78,26 @@ export async function selectMenu(opts: SelectOptions): Promise<number> {
       for (const line of splitNonEmptyLines(opts.status)) lines.push(`  ${paint(line, 'green')}`);
       lines.push('');
     }
-    for (let i = 0; i < items.length; i++) {
+    const headerN = lines.length;
+
+    // 项窗口行数 = 终端可视高度 - 头部 - 尾部；预留 1 行，避免光标落在底行时回滚抖动。
+    const footerBase = opts.hint ? 2 : 1;
+    // 先按「未加位置指示」估视口，判断 item 数是否溢出（会话内 item 数固定，此判断稳定）。
+    const baseViewH = Math.max(1, rows - headerN - footerBase - 1);
+    const scrollable = items.length > baseViewH;
+    let footerN = footerBase;
+    let indicator = '';
+    if (scrollable) {
+      indicator = `${idx + 1} / ${items.length}`;
+      footerN += 1;
+    }
+    const viewH = Math.max(1, rows - headerN - footerN - 1);
+    const { start, end } = scrollWindow(top, idx, viewH, items.length);
+    top = start;
+
+    // 项窗口：只渲染 [start,end)，选中项随滑窗保证可见。
+    //（原逻辑把整棵 items 全画出来，超过屏高后选中项滚出视口、屏上「不动」。）
+    for (let i = start; i < end; i++) {
       const it = items[i] ?? '';
       if (it === '') {
         lines.push('');
@@ -87,6 +108,7 @@ export async function selectMenu(opts: SelectOptions): Promise<number> {
       else lines.push(paint(`     ${num}${it}`, opts.colors?.[i] ?? 'none'));
     }
     lines.push('');
+    if (indicator) lines.push(`  ${paint(indicator, 'dim')}`);
     if (opts.hint) lines.push(`  ${paint(opts.hint, 'dim')}`);
 
     const block = lines.map((l) => truncateDisplay(l, cols - 1)).join('\n');
@@ -201,6 +223,18 @@ function splitNonEmptyLines(s: string): string[] {
     .split('\n')
     .map((line) => line.trimEnd())
     .filter((line) => line.trim() !== '');
+}
+
+/** 滚动窗口 [start,end)：高 viewH 行，始终包含选中项 idx。与 Go 版 scrollWindow 对齐。 */
+export function scrollWindow(top: number, idx: number, viewH: number, n: number): { start: number; end: number } {
+  if (viewH < 1) viewH = 1;
+  if (idx < top) top = idx;
+  else if (idx >= top + viewH) top = idx - viewH + 1;
+  if (top < 0) top = 0;
+  if (top > n - viewH) top = n - viewH;
+  if (top < 0) top = 0;
+  const end = Math.min(top + viewH, n);
+  return { start: top, end };
 }
 
 /**
