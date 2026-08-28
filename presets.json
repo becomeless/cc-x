@@ -84,6 +84,10 @@
       { "label": "按量付费", "url": "https://dashscope.aliyuncs.com/apps/anthropic" }
     ],
     "models": { "opus": "qwen3.8-max", "sonnet": "qwen3.8-max", "haiku": "qwen3.6-flash", "fable": "qwen3.8-max" },
+    "models_api_map": {
+      "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic": "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models",
+      "https://dashscope.aliyuncs.com/apps/anthropic": "https://dashscope.aliyuncs.com/compatible-mode/v1/models"
+    },
     "models_1m": ["qwen3.8-max", "qwen3.7-max", "qwen3.7-plus"]
   },
   {

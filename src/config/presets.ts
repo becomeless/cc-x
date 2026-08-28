@@ -95,6 +95,11 @@ export const BUILTIN_PRESETS: Preset[] = [
       { label: '按量付费', url: 'https://dashscope.aliyuncs.com/apps/anthropic' },
     ],
     models: { opus: 'qwen3.8-max', sonnet: 'qwen3.8-max', haiku: 'qwen3.6-flash', fable: 'qwen3.8-max' },
+    // Anthropic 兼容端点未实现 /v1/models；模型列表在同宿主 OpenAI 风格 compatible-mode 端点
+    modelsApiMap: {
+      'https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic': 'https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models',
+      'https://dashscope.aliyuncs.com/apps/anthropic': 'https://dashscope.aliyuncs.com/compatible-mode/v1/models',
+    },
     models1m: ['qwen3.8-max', 'qwen3.7-max', 'qwen3.7-plus'],
   },
   {

@@ -1,5 +1,9 @@
 # 更新日志
 
+## v0.4.32 — 2026-08-27
+
+- 修复：阿里百炼「获取模型列表」HTTP 404——Anthropic 兼容端点（`token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic` / `dashscope.aliyuncs.com/apps/anthropic`）未实现 `GET /v1/models`，缺省推导 `{base}/v1/models` 报 404；预设新增 `models_api_map` 显式指向同宿主 OpenAI 风格 `compatible-mode/v1/models`（Token Plan / 按量付费各自端点）（Go / TypeScript 双版本对齐）
+
 ## v0.4.31 — 2026-08-24
 
 - 调整：阿里百炼（通义千问）预设同步官方最新计费——「Coding Plan」地址（`coding.dashscope.aliyuncs.com`）已下线，改为官方「按量付费」`https://dashscope.aliyuncs.com/apps/anthropic`；Token Plan 标签标注「个人/团队」共用同一地址（个人版与团队版仅 API Key 不同）（Go / TypeScript 双版本对齐）

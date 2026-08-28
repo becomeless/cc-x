@@ -30,6 +30,17 @@ func testCatalog() []presets.Preset {
 			Name: "智谱GLM",
 			URLs: []presets.URL{{Label: "Anthropic 兼容", URL: "https://open.bigmodel.cn/api/anthropic"}},
 		},
+		{
+			Name: "阿里百炼",
+			URLs: []presets.URL{
+				{Label: "Token Plan（个人/团队）", URL: "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic"},
+				{Label: "按量付费", URL: "https://dashscope.aliyuncs.com/apps/anthropic"},
+			},
+			ModelsAPIMap: map[string]string{
+				"https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic": "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models",
+				"https://dashscope.aliyuncs.com/apps/anthropic":                  "https://dashscope.aliyuncs.com/compatible-mode/v1/models",
+			},
+		},
 	}
 }
 
@@ -45,6 +56,8 @@ func TestFindPresetByBase(t *testing.T) {
 		{"https://api.xiaomimimo.com/anthropic", "小米MiMo"},
 		{"https://token-plan-cn.xiaomimimo.com/anthropic", "小米MiMo"}, // map key 命中
 		{"https://open.bigmodel.cn/api/anthropic", "智谱GLM"},
+		{"https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic", "阿里百炼"},
+		{"https://dashscope.aliyuncs.com/apps/anthropic", "阿里百炼"},
 		{"https://custom.example.com/anthropic", ""}, // 自定义供应商
 		{"", ""},
 	}
@@ -96,6 +109,14 @@ func TestResolveModelsEndpoint(t *testing.T) {
 	base = "https://api.deepseek.com/anthropic"
 	if ep := resolveModelsEndpoint(findPresetByBase(c, base), base); ep != "https://api.deepseek.com/models" {
 		t.Errorf("DeepSeek 端点: %q", ep)
+	}
+	base = "https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic"
+	if ep := resolveModelsEndpoint(findPresetByBase(c, base), base); ep != "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models" {
+		t.Errorf("阿里百炼 Token Plan 端点: %q", ep)
+	}
+	base = "https://dashscope.aliyuncs.com/apps/anthropic"
+	if ep := resolveModelsEndpoint(findPresetByBase(c, base), base); ep != "https://dashscope.aliyuncs.com/compatible-mode/v1/models" {
+		t.Errorf("阿里百炼 按量端点: %q", ep)
 	}
 	base = "https://open.bigmodel.cn/api/anthropic"
 	if ep := resolveModelsEndpoint(findPresetByBase(c, base), base); ep != "" {

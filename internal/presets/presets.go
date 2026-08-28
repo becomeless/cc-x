@@ -130,6 +130,10 @@ var BuiltinPresets = []Preset{
 		},
 		Models:   Models{Opus: "qwen3.8-max", Sonnet: "qwen3.8-max", Haiku: "qwen3.6-flash", Fable: "qwen3.8-max"},
 		Models1M: []string{"qwen3.8-max", "qwen3.7-max", "qwen3.7-plus"},
+		ModelsAPIMap: map[string]string{
+			"https://token-plan.cn-beijing.maas.aliyuncs.com/apps/anthropic": "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1/models",
+			"https://dashscope.aliyuncs.com/apps/anthropic":                  "https://dashscope.aliyuncs.com/compatible-mode/v1/models",
+		},
 	},
 	{
 		Name:   "火山方舟",
